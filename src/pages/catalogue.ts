@@ -1,8 +1,3 @@
-import '../styles/tokens.css'
-import '../styles/base.css'
-import '../styles/glass.css'
-import '../styles/transitions.css'
-import '../styles/catalogue.css'
 import { applyGlassSupport } from '../lib/glass'
 import { DIFFICULTIES, EQUIPMENT, EXERCISES, MUSCLES, PATTERNS, type Exercise } from '../data/exercises'
 import { gifSrc } from '../data/media'

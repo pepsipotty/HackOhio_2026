@@ -1,8 +1,3 @@
-import '../styles/tokens.css'
-import '../styles/base.css'
-import '../styles/glass.css'
-import '../styles/transitions.css'
-import '../styles/exercise.css'
 import { applyGlassSupport } from '../lib/glass'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { resolveExercise } from '../lib/catalogue'

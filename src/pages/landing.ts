@@ -1,8 +1,3 @@
-import '../styles/tokens.css'
-import '../styles/base.css'
-import '../styles/glass.css'
-import '../styles/transitions.css'
-import '../styles/landing.css'
 import { applyGlassSupport } from '../lib/glass'
 import { isCoarsePointer, isLowPower, prefersReducedMotion } from '../lib/motion-prefs'
 import { DEMO_POSTER, DEMO_VIDEO } from '../data/media'
