@@ -34,6 +34,8 @@ export interface ExerciseMotion {
 //   case 'seated-cable-row': return (await import('./poses/seated-cable-row')).default
 export async function getMotion(id: string): Promise<ExerciseMotion | undefined> {
   switch (id) {
+    case 'seated-cable-row':
+      return (await import('./poses/seated-cable-row')).default
     default:
       return undefined
   }
