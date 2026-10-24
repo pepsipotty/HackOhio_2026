@@ -1,11 +1,14 @@
 // The exercise page's 3D view: animated camera presets, joint poses, orbit, and rep playback.
 // Renders on demand: the rAF loop only runs while a tween, playback or orbit damping is active.
 import {
-  BoxGeometry, Color, CylinderGeometry, DataTexture, DirectionalLight, Euler, GridHelper, HemisphereLight,
+  BoxGeometry, Color, DataTexture, DirectionalLight, Euler, GridHelper, HemisphereLight,
   Mesh, MeshBasicMaterial, MeshToonMaterial, NearestFilter, PerspectiveCamera, Quaternion, RedFormat,
-  SRGBColorSpace, Scene, Spherical, Vector3, WebGLRenderer,
+  SRGBColorSpace, Scene, Spherical, Vector3, WebGLRenderer, type Material,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { Line2 } from 'three/examples/jsm/lines/Line2.js'
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { JOINT_NAMES, loadRig } from './rig'
 import { MODEL_URL } from '../data/media'
 import { Tween, samplePose } from '../lib/tween'
@@ -73,13 +76,23 @@ export async function createViewer(
   box([0.08, 0.31, 0.08], [0, 0.155, 0.05])
   box([0.06, 0.04, 2.9], [0, 0.02, 0.35]) // floor rail
   box([0.56, 0.42, 0.04], [0, 0.22, 0.92], 0.52) // foot platform, square to the seated shins
-  box([0.5, 1.9, 0.3], [0, 0.95, 1.75]) // weight stack
+  // weight stack: thin guide rods and caps, then separate plate slabs so the gaps read as a stack
+  box([0.03, 1.9, 0.03], [-0.22, 0.95, 1.75])
+  box([0.03, 1.9, 0.03], [0.22, 0.95, 1.75])
+  box([0.56, 0.06, 0.3], [0, 1.92, 1.75])
+  box([0.56, 0.05, 0.3], [0, 0.025, 1.75])
+  for (let k = 0; k < 12; k++) box([0.4, 0.06, 0.26], [0, 0.1 + k * 0.085, 1.75])
   box([0.12, 0.12, 0.2], [0, 0.55, 1.5]) // pulley housing
   const grid = new GridHelper(10, 20, mid, mid)
   scene.add(grid)
 
-  const cable = new Mesh(new CylinderGeometry(0.009, 0.009, 1, 6), new MeshBasicMaterial({ color: paper }))
-  scene.add(cable)
+  // The cable: a 2px screen-space white line (a world-space tube goes sub-pixel at the presets).
+  const line = new LineMaterial({ color: paper, linewidth: 2 })
+  // fixed run: low pulley, up the frame, over the top and down to the top plate
+  const run = new Line2(new LineGeometry().setPositions([0, 0.55, 1.55, 0, 1.86, 1.55, 0, 1.86, 1.7, 0, 1.07, 1.7]), line)
+  // moving run: hands to the low pulley; a unit segment along Y, stretched and aimed every frame
+  const cable = new Line2(new LineGeometry().setPositions([0, -0.5, 0, 0, 0.5, 0]), line)
+  scene.add(run, cable)
 
   const rig = await loadRig(MODEL_URL, skin)
   scene.add(rig.root)
@@ -279,6 +292,12 @@ export async function createViewer(
       ro.disconnect()
       document.removeEventListener('visibilitychange', onVisibility)
       controls.dispose()
+      scene.traverse((o) => {
+        const m = o as Mesh
+        m.geometry?.dispose()
+        ;(m.material as Material | undefined)?.dispose?.()
+      })
+      gradientMap.dispose()
       renderer.dispose()
       renderer.domElement.remove()
     },

@@ -5,6 +5,7 @@
 ::selection { background: var(--paper); color: var(--ink); }
 html { scrollbar-color: var(--flood-light) var(--flood); }
 
+.site-header > nav { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
 .back-link { text-decoration: none; padding: var(--s2) 0; }
 .back-link:hover { text-decoration: underline; text-underline-offset: 0.3em; text-decoration-thickness: 2px; }
 
@@ -128,7 +129,6 @@ main { padding-block: var(--s2) var(--s9); }
 
 /* ---------- Step panel ---------- */
 .panel { grid-column: 8 / span 5; display: flex; flex-direction: column; padding-top: var(--s5); }
-.panel__name { margin-top: var(--s3); }
 .coach-note { margin-top: var(--s4); color: var(--paper-soft); }
 
 /* Desktop: row above the step, buttons below it. Under 1024px the wrapper becomes the sticky bottom bar. */
@@ -192,10 +192,12 @@ main { padding-block: var(--s2) var(--s9); }
 .step-row-wrap[data-now] .now-bar { opacity: 1; }
 
 .step__head { display: flex; align-items: flex-end; gap: var(--s5); }
-.step__num { display: grid; flex: none; font-variant-numeric: tabular-nums; }
+/* the giant numeral carries its own "of 7" caption; the title stands alone beside it */
+.step__mark { display: grid; justify-items: start; gap: var(--s2); flex: none; }
+.step__num { display: grid; font-variant-numeric: tabular-nums; }
 .step__num > span { grid-area: 1 / 1; }
 .step__of { color: var(--paper-soft); }
-.step__title { margin-top: var(--s2); text-wrap: balance; }
+.step__title { text-wrap: balance; }
 .step__instruction { margin-top: var(--s5); }
 
 .mistake {
@@ -253,8 +255,8 @@ main { padding-block: var(--s2) var(--s9); }
 /* ---------- Coming soon ---------- */
 .soon { row-gap: var(--s7); align-items: start; }
 .soon__head { grid-column: 1 / -1; padding-top: var(--s5); }
-.soon__name { margin-top: var(--s3); }
 .soon__frame {
+  --mq-fill: var(--flood);
   grid-column: 1 / span 7;
   display: flex;
   flex-direction: column;
@@ -266,6 +268,11 @@ main { padding-block: var(--s2) var(--s9); }
   border-radius: var(--r-panel);
   view-transition-name: exercise-hero;
 }
+/* "Still being drawn": the mannequin as a dashed sketch, with the far limbs, the cable and the near arm not drawn yet */
+.soon__frame .mannequin { width: min(100%, 400px); margin-bottom: var(--s4); }
+.soon__frame :is(.mq-line, .mq-o, .mq-joint) { stroke-dasharray: 6 7; }
+.soon__frame .mq-o { stroke-linecap: butt; }
+.soon__frame :is(.mq-far, .mq-cable), .soon__frame .mq-near > :nth-child(n+12):not(:nth-child(16), :nth-child(17)) { display: none; }
 .soon__side { grid-column: 8 / span 5; display: grid; gap: var(--s5); align-self: center; }
 .soon__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s5); margin-top: var(--s4); }
 .text-link { font-weight: 700; text-underline-offset: 0.3em; text-decoration-thickness: 2px; }

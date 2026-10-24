@@ -17,8 +17,10 @@
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5L19.5 7" /></symbol>
     </svg>
     <header class="site-header">
-      <a class="wordmark" href="/">REP ONE</a>
-      <a class="back-link t-label" href="catalogue.html"><span aria-hidden="true">← </span>Catalogue</a>
+      <nav aria-label="Site">
+        <a class="wordmark" href="./">REP ONE</a>
+        <a class="back-link t-label" href="catalogue.html"><span aria-hidden="true">← </span>Catalogue</a>
+      </nav>
     </header>
 
     <main id="main">
@@ -102,13 +104,12 @@
                 <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" /></svg>
               </button>
               <span class="playback__label t-label" aria-hidden="true">Full rep</span>
-              <input class="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="Rep position" />
+              <input class="scrub" type="range" min="0" max="1000" value="0" step="10" aria-label="Rep position" />
             </div>
           </div>
         </div>
 
         <div class="panel">
-          <p class="t-label panel__no"></p>
           <h1 class="t-h1 panel__name"></h1>
           <p class="t-label coach-note">Draft — to be reviewed by a qualified coach before public release.</p>
 
@@ -126,11 +127,11 @@
 
           <div class="step" id="step-panel" role="tabpanel">
             <div class="step__head">
-              <span class="step__num t-display" aria-hidden="true"></span>
-              <div>
-                <p class="t-label step__of"></p>
-                <h2 class="t-h2 step__title" aria-live="polite"></h2>
+              <div class="step__mark" aria-hidden="true">
+                <span class="step__num t-display"></span>
+                <span class="step__of t-label"></span>
               </div>
+              <h2 class="t-h2 step__title" aria-live="polite"></h2>
             </div>
             <p class="t-body step__instruction"></p>
             <div class="mistake">
@@ -151,7 +152,6 @@
       <!-- Coming soon -->
       <section class="soon grid" data-view="coming-soon" hidden>
         <div class="soon__head">
-          <p class="t-label soon__no"></p>
           <h1 class="t-h1 soon__name"></h1>
         </div>
         <div class="soon__frame">

@@ -7,7 +7,7 @@ import { applyGlassSupport } from '../lib/glass'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { resolveExercise } from '../lib/catalogue'
 import { clampStep, stepForKey } from '../lib/steps'
-import { EXERCISES, type Exercise } from '../data/exercises'
+import type { Exercise } from '../data/exercises'
 import { getMotion, type ExerciseMotion, type View } from '../data/motion'
 import type { Viewer } from '../viewer/viewer'
 
@@ -15,7 +15,6 @@ applyGlassSupport()
 
 const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector(sel) as T
 const pad = (n: number) => String(n).padStart(2, '0')
-const no = (e: Exercise) => `No. ${pad(EXERCISES.indexOf(e) + 1)}`
 
 function show(view: string): HTMLElement {
   for (const el of document.querySelectorAll<HTMLElement>('[data-view]')) el.hidden = el.dataset.view !== view
@@ -24,10 +23,11 @@ function show(view: string): HTMLElement {
 
 function comingSoon(e: Exercise): void {
   const root = show('coming-soon')
-  $('.soon__no', root).textContent = no(e)
   $('.soon__name', root).textContent = e.name
   $('.soon__works', root).textContent = e.works
-  $('.soon__why', root).textContent = `Why start here: ${e.why}`
+  $('.soon__why', root).textContent = `Why learn it: ${e.why}`
+  // the figure "still being drawn": the loading mannequin, re-styled as an unfinished dashed sketch
+  $('.soon__frame', root).prepend($('.viewport-msg .mannequin').cloneNode(true))
 }
 
 function built(e: Exercise, motion: ExerciseMotion): void {
@@ -40,8 +40,8 @@ function built(e: Exercise, motion: ExerciseMotion): void {
   let viewer: Viewer | null = null
   const visited = new Set<number>()
 
-  $('.panel__no', root).textContent = `${no(e)} · ${e.name}`
   $('.panel__name', root).textContent = e.name
+  $('.step__of', root).textContent = `of ${n}`
 
   const canvas = $('.viewport-canvas', root)
   const msg = $('.viewport-msg', root)
@@ -78,7 +78,7 @@ function built(e: Exercise, motion: ExerciseMotion): void {
   })
 
   const labelCanvas = () => {
-    canvas.setAttribute('aria-label', `Model showing step ${cur + 1}: ${steps[cur].title}, ${view} view`)
+    canvas.setAttribute('aria-label', `3D model of the ${e.name}, step ${cur + 1} of ${n}: ${steps[cur].title}, ${view} view`)
   }
 
   function swapNumeral(text: string): void {
@@ -109,7 +109,6 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     })
     panel.setAttribute('aria-labelledby', tabs[cur].id)
     swapNumeral(pad(cur + 1))
-    $('.step__of', panel).textContent = `Step ${cur + 1} of ${n}`
     $('.step__title', panel).textContent = s.title
     $('.step__instruction', panel).textContent = s.instruction
     $('.mistake__text', panel).textContent = s.mistake
@@ -170,19 +169,30 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     p.textContent = text
   }
 
+  let starting = false
   async function startViewer(): Promise<void> {
+    starting = true
     try {
       const { createViewer } = await import('../viewer/viewer')
       viewer = await createViewer(canvas, motion, { reducedMotion: reduced, onPlayback })
     } catch (err) {
       console.error(err)
       return showOff("The 3D view couldn't start. Every step is written out alongside.")
+    } finally {
+      starting = false
     }
     viewer.goTo(cur)
+    // a restored page may have been left mid-playback; the new viewer starts stopped at t=0
+    onPlayback(0, false)
+    delete nowWrap.dataset.now
     camSwitch.hidden = playback.hidden = false
     badge.hidden = !viewer.placeholder
-    if (reduced) msg.hidden = true
-    else msg.animate({ opacity: [1, 0] }, { duration: 320, easing: 'ease-out' }).finished.then(() => (msg.hidden = true))
+    // hide on a timer: Animation.finished never settles while the page produces no frames (hidden/occluded window)
+    if (!reduced) msg.animate({ opacity: [1, 0] }, { duration: 320, easing: 'ease-out', fill: 'forwards' })
+    setTimeout(() => {
+      msg.hidden = true
+      msg.getAnimations().forEach((a) => a.cancel()) // reset opacity so a bfcache rebuild shows the overlay again
+    }, reduced ? 0 : 320)
   }
 
   prev.addEventListener('click', () => goTo(cur - 1))
@@ -192,10 +202,12 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     if (ev.defaultPrevented || ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return
     const t = ev.target as HTMLElement
     if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t.isContentEditable) return
+    // ←/→ step page-wide; ↑/↓/Home/End only inside the tablist, so they still scroll the page elsewhere
+    const onTab = tabs.includes(t as HTMLButtonElement)
+    if (!onTab && ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return
     const k = stepForKey(ev.key, cur, n)
     if (k === null) return
     ev.preventDefault()
-    const onTab = tabs.includes(t as HTMLButtonElement)
     if (k !== cur) goTo(k)
     if (onTab) tabs[k].focus()
   })
@@ -212,7 +224,7 @@ function built(e: Exercise, motion: ExerciseMotion): void {
   })
   // a page restored from the back/forward cache lost its viewer on pagehide; build it again
   addEventListener('pageshow', (ev) => {
-    if (!ev.persisted || viewer) return
+    if (!ev.persisted || viewer || starting || msg.dataset.kind === 'off') return
     msg.hidden = false
     startViewer()
   })
