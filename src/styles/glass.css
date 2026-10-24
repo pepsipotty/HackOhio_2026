@@ -56,5 +56,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glass, .glass::before { transition: none; }
+  .glass, .glass::before, .glass-refract .glass, .glass-refract .glass::before { transition: none; }
 }
