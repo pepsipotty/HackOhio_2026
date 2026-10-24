@@ -45,7 +45,7 @@
 .glass-refract .glass__label {
   padding: 6px 14px;
   margin: -6px -14px;
-  background: oklch(0.36 0.20 264 / 0.35);
+  background: oklch(0.36 0.20 264 / 0.65);
 }
 .glass-refract .glass:hover { transform: scale(1.02); }
 .glass-refract .glass:hover::before { transform: translateX(6px); }
