@@ -179,10 +179,9 @@ main { padding-block: var(--s2) var(--s9); }
 .key[aria-selected='true'] { border-color: var(--paper); background: var(--paper); color: var(--ink); }
 
 .now-bar {
-  --t: 0;
   position: absolute;
   bottom: 0;
-  left: calc(var(--t) * (100% - 56px));
+  left: calc(var(--t, 0) * (100% - 56px));
   width: 56px;
   height: 4px;
   border-radius: 2px;
@@ -293,7 +292,7 @@ main { padding-block: var(--s2) var(--s9); }
   }
   .step-row-wrap { margin-top: 0; padding-bottom: var(--s3); }
   .step-row li { flex-basis: 44px; }
-  .now-bar { left: calc(var(--t) * (100% - 44px)); width: 44px; }
+  .now-bar { left: calc(var(--t, 0) * (100% - 44px)); width: 44px; }
   .key { background: var(--flood-deep); }
   .step-nav { margin-top: var(--s2); }
   .step-nav .glass, .btn-outline { padding: 14px 18px; }

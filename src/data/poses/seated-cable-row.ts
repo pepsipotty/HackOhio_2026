@@ -3,7 +3,7 @@
 // See src/viewer/rig.ts for the full convention. root.position is the pelvis position.
 import type { CameraPreset, ExerciseMotion, Pose, Vec3, View } from '../motion'
 
-const STANDING: Vec3 = [0, 1.0, 0]
+const STANDING: Vec3 = [0.55, 1.0, 0] // beside the bench, so the legs don't pass through it
 const SEATED: Vec3 = [0, 0.52, 0]
 
 // Left and right sides mirror each other; only X rotations are used.
@@ -31,9 +31,11 @@ const motion: ExerciseMotion = {
   exerciseId: 'seated-cable-row',
   cameras: {
     side: cam('side', [3.4, 1.2, 0]),
-    top: cam('top', [0.01, 4.6, 0.2]),
+    // looking down from just behind the head, so the figure faces up the screen toward the stack
+    top: { view: 'top', position: [0.01, 4.6, 0.1], target: [0, 0.8, 0.3], fov: 40 },
     back: cam('back', [0, 1.4, -3.4]),
-    iso: cam('iso', [2.5, 2.1, 2.5]),
+    // from behind and to the right, so the whole station (bench to weight stack) is in frame
+    iso: { view: 'iso', position: [3.0, 2.2, -1.8], target: [0, 0.7, 0.4], fov: 40 },
   },
   steps: [
     {
@@ -68,7 +70,8 @@ const motion: ExerciseMotion = {
       mistake: 'Rounding your back to reach the handle instead of hinging at the hips.',
       cues: ['Palms face each other', 'Arms long, shoulders relaxed'],
       camera: 'top',
-      pose: pose(SEATED, 22, 8, 100, 25, 75, 0),
+      // hip stays at 85: the pelvis is fixed, so extra hip flexion would lift the feet off the platform
+      pose: pose(SEATED, 22, 8, 85, 25, 75, 0),
       duration: 900,
       easing: 'easeInOut',
     },

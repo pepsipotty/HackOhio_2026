@@ -9,6 +9,7 @@ import { resolveExercise } from '../lib/catalogue'
 import { clampStep, stepForKey } from '../lib/steps'
 import { EXERCISES, type Exercise } from '../data/exercises'
 import { getMotion, type ExerciseMotion, type View } from '../data/motion'
+import type { Viewer } from '../viewer/viewer'
 
 applyGlassSupport()
 
@@ -36,7 +37,7 @@ function built(e: Exercise, motion: ExerciseMotion): void {
   const n = steps.length
   let cur = 0
   let view: View = steps[0].camera
-  let viewer: { goTo(i: number): void } | null = null
+  let viewer: Viewer | null = null
   const visited = new Set<number>()
 
   $('.panel__no', root).textContent = `${no(e)} · ${e.name}`
@@ -44,6 +45,14 @@ function built(e: Exercise, motion: ExerciseMotion): void {
 
   const canvas = $('.viewport-canvas', root)
   const msg = $('.viewport-msg', root)
+  const camSwitch = $('.cam-switch', root)
+  const camButtons = [...camSwitch.querySelectorAll<HTMLButtonElement>('[data-cam]')]
+  const badge = $('.badge', root)
+  const playback = $('.playback', root)
+  const playBtn = $<HTMLButtonElement>('.playback button', root)
+  const scrub = $<HTMLInputElement>('.scrub', root)
+  const nowWrap = $('.step-row-wrap', root)
+  if (!motion.rep) $('.playback__label', root).textContent = 'Placeholder motion'
   const row = $<HTMLOListElement>('.step-row', root)
   const panel = $('#step-panel', root)
   const numEl = $('.step__num', root)
@@ -120,8 +129,60 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     done.hidden = !last
     if (focused === next && last) done.focus()
     if (focused === done && !last) next.focus()
-    labelCanvas()
+    setView(s.camera)
     viewer?.goTo(cur)
+    onPlayback(0, false)
+    delete nowWrap.dataset.now
+  }
+
+  function setView(v: View): void {
+    view = v
+    camButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cam === v)))
+    labelCanvas()
+  }
+
+  function onPlayback(t: number, playing: boolean): void {
+    scrub.value = String(Math.round(t * 1000))
+    playBtn.setAttribute('aria-pressed', String(playing))
+    nowWrap.style.setProperty('--t', String(t))
+    nowWrap.dataset.now = ''
+  }
+
+  for (const b of camButtons) {
+    b.addEventListener('click', () => {
+      setView(b.dataset.cam as View)
+      viewer?.setCamera(view)
+    })
+  }
+  playBtn.addEventListener('click', () => {
+    if (playBtn.getAttribute('aria-pressed') === 'true') viewer?.pause()
+    else viewer?.play()
+  })
+  scrub.addEventListener('input', () => viewer?.seek(Number(scrub.value) / 1000))
+
+  function showOff(text: string): void {
+    msg.hidden = false
+    msg.dataset.kind = 'off'
+    canvas.hidden = true
+    camSwitch.hidden = playback.hidden = badge.hidden = true
+    const p = $('.viewport-msg__text', msg)
+    p.className = 'viewport-msg__text t-body'
+    p.textContent = text
+  }
+
+  async function startViewer(): Promise<void> {
+    try {
+      const { createViewer } = await import('../viewer/viewer')
+      viewer = await createViewer(canvas, motion, { reducedMotion: reduced, onPlayback })
+    } catch (err) {
+      console.error(err)
+      return showOff("The 3D view couldn't start. Every step is written out alongside.")
+    }
+    viewer.goTo(cur)
+    camSwitch.hidden = playback.hidden = false
+    badge.hidden = !viewer.placeholder
+    if (reduced) msg.hidden = true
+    else msg.animate({ opacity: [1, 0] }, { duration: 320, easing: 'ease-out' }).finished.then(() => (msg.hidden = true))
   }
 
   prev.addEventListener('click', () => goTo(cur - 1))
@@ -143,13 +204,18 @@ function built(e: Exercise, motion: ExerciseMotion): void {
 
   const c = document.createElement('canvas')
   const webgl = !!(c.getContext('webgl2') || c.getContext('webgl'))
-  if (!webgl) {
-    msg.dataset.kind = 'off'
-    canvas.hidden = true
-    const text = $('.viewport-msg__text', msg)
-    text.className = 'viewport-msg__text t-body'
-    text.textContent = "3D view isn't supported on this browser. Every step is written out alongside."
-  }
+  if (!webgl) return showOff("3D view isn't supported on this browser. Every step is written out alongside.")
+  startViewer()
+  addEventListener('pagehide', () => {
+    viewer?.dispose()
+    viewer = null
+  })
+  // a page restored from the back/forward cache lost its viewer on pagehide; build it again
+  addEventListener('pageshow', (ev) => {
+    if (!ev.persisted || viewer) return
+    msg.hidden = false
+    startViewer()
+  })
 }
 
 async function main(): Promise<void> {
