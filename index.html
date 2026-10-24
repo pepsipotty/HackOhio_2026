@@ -15,11 +15,155 @@
         <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" />
       </filter>
     </svg>
+
+    <div class="parallax" aria-hidden="true">
+      <svg class="layer layer--far" viewBox="0 0 1440 900" preserveAspectRatio="xMaxYMid slice" focusable="false">
+        <g class="layer__numerals">
+          <text x="890" y="480">1</text>
+          <text x="1120" y="1010">2</text>
+          <text x="420" y="1250">3</text>
+        </g>
+      </svg>
+      <svg class="layer layer--mid" viewBox="0 0 1440 900" preserveAspectRatio="xMaxYMid slice" focusable="false">
+        <path fill-rule="evenodd" d="M1300 66a130 130 0 1 0 0.1 0zm0 106a24 24 0 1 1-0.1 0z" />
+        <path fill-rule="evenodd" d="M905 156a54 54 0 1 0 0.1 0zm0 42a12 12 0 1 1-0.1 0z" />
+        <g>
+          <rect x="1314" y="600" width="16" height="96" />
+          <rect x="1250" y="700" width="144" height="26" rx="3" />
+          <rect x="1250" y="734" width="144" height="26" rx="3" />
+          <rect x="1250" y="768" width="144" height="26" rx="3" />
+          <rect x="1250" y="802" width="144" height="26" rx="3" />
+          <rect x="1250" y="836" width="144" height="26" rx="3" />
+          <rect x="1250" y="870" width="144" height="26" rx="3" />
+        </g>
+        <g>
+          <rect x="860" y="846" width="350" height="22" rx="4" />
+          <rect x="892" y="868" width="14" height="60" />
+          <rect x="1164" y="868" width="14" height="60" />
+        </g>
+      </svg>
+      <svg class="layer layer--near" viewBox="0 0 1440 900" preserveAspectRatio="xMaxYMid slice" focusable="false">
+        <g class="layer__lines">
+          <path d="M876 108H1380M876 98v20M1380 98v20" />
+          <path d="M1412 200V780M1402 200h20M1402 780h20" />
+          <path class="layer__pull" d="M1236 760C1200 620 990 570 872 690M874 664l-2 26 26-4" />
+          <path d="M880 790H1150M880 780v20M1150 780v20" />
+        </g>
+      </svg>
+    </div>
+
     <header class="site-header">
       <a class="wordmark" href="/">REP ONE</a>
       <span class="t-label">Form, one step at a time</span>
     </header>
-    <main id="main"></main>
+
+    <main id="main">
+      <section class="hero grid" aria-labelledby="hero-title">
+        <figure class="demo">
+          <figcaption class="demo__label t-label">Fig. 1 — Demo</figcaption>
+          <video class="demo__video" muted loop playsinline preload="metadata" aria-label="Rep One demo"></video>
+          <button class="demo__toggle t-label" type="button" hidden>Play demo</button>
+          <div class="demo__placeholder" hidden>
+            <!-- Mannequin line drawing, reused in exercise.html. Colour comes from currentColor; --mq-fill is the field behind it. -->
+            <svg class="mannequin" viewBox="0 0 480 300" role="img" aria-label="Line drawing of a mannequin seated at a cable row station" focusable="false">
+              <g class="mq-line">
+                <path d="M20 286H462" />
+                <rect x="36" y="28" width="78" height="258" rx="6" />
+                <path d="M60 40V176M90 40V176" />
+                <rect x="52" y="182" width="46" height="10" rx="2" />
+                <rect x="52" y="196" width="46" height="10" rx="2" />
+                <rect x="52" y="210" width="46" height="10" rx="2" />
+                <rect x="52" y="224" width="46" height="10" rx="2" />
+                <rect x="52" y="238" width="46" height="10" rx="2" />
+                <rect x="52" y="252" width="46" height="10" rx="2" />
+                <rect x="52" y="266" width="46" height="10" rx="2" />
+                <circle cx="75" cy="46" r="9" />
+                <path d="M75 55V182M114 206H118" />
+                <circle cx="127" cy="206" r="9" />
+                <path d="M146 280L160 212L170 214L157 282Z" />
+                <rect x="196" y="246" width="256" height="10" rx="4" />
+                <path d="M220 256V286M428 256V286" />
+                <path class="mq-cable" d="M136 206L196 200" />
+              </g>
+              <g class="mq-far">
+                <path class="mq-o" stroke-width="25" d="M324 232L252 208" />
+                <path class="mq-i" stroke-width="22" d="M324 232L252 208" />
+                <path class="mq-o" stroke-width="19" d="M252 208L178 230" />
+                <path class="mq-i" stroke-width="16" d="M252 208L178 230" />
+                <path class="mq-o" stroke-width="12" d="M178 232L170 208" />
+                <path class="mq-i" stroke-width="9" d="M178 232L170 208" />
+                <path class="mq-o" stroke-width="17" d="M310 158L256 176" />
+                <path class="mq-i" stroke-width="14" d="M310 158L256 176" />
+                <path class="mq-o" stroke-width="15" d="M256 176L202 194" />
+                <path class="mq-i" stroke-width="12" d="M256 176L202 194" />
+              </g>
+              <g class="mq-near">
+                <path class="mq-o" stroke-width="45" d="M316 224L309 172" />
+                <path class="mq-i" stroke-width="42" d="M316 224L309 172" />
+                <path class="mq-o" stroke-width="12" d="M307 148L305 134" />
+                <path class="mq-i" stroke-width="9" d="M307 148L305 134" />
+                <circle class="mq-joint" cx="304" cy="114" r="19" />
+                <path class="mq-o" stroke-width="25" d="M316 240L242 218" />
+                <path class="mq-i" stroke-width="22" d="M316 240L242 218" />
+                <path class="mq-o" stroke-width="19" d="M242 218L170 240" />
+                <path class="mq-i" stroke-width="16" d="M242 218L170 240" />
+                <path class="mq-o" stroke-width="12" d="M170 242L162 216" />
+                <path class="mq-i" stroke-width="9" d="M170 242L162 216" />
+                <path class="mq-o" stroke-width="17" d="M304 162L250 182" />
+                <path class="mq-i" stroke-width="14" d="M304 162L250 182" />
+                <path class="mq-o" stroke-width="15" d="M250 182L198 200" />
+                <path class="mq-i" stroke-width="12" d="M250 182L198 200" />
+                <circle class="mq-joint" cx="316" cy="238" r="6" />
+                <circle class="mq-joint" cx="242" cy="218" r="5" />
+                <circle class="mq-joint" cx="304" cy="162" r="6" />
+                <circle class="mq-joint" cx="250" cy="182" r="5" />
+                <rect class="mq-joint" x="190" y="188" width="10" height="26" rx="5" />
+              </g>
+            </svg>
+            <p class="t-h2">Demo video coming soon</p>
+            <p class="demo__path t-label">public/media/video/demo.mp4</p>
+          </div>
+        </figure>
+
+        <div class="cta">
+          <p class="t-label">32 exercises · Start with No. 01</p>
+          <h1 class="cta__title t-display" id="hero-title">See<br />catalogue</h1>
+          <p class="t-body">Pick an exercise and we'll walk you through it, one small step at a time.</p>
+          <a class="glass" href="catalogue.html"><span class="glass__label">Browse exercises</span></a>
+        </div>
+      </section>
+
+      <section class="how grid" aria-labelledby="how-title">
+        <h2 class="how__title t-h2" id="how-title">How it works</h2>
+        <ol class="how__steps" role="list">
+          <li class="how__step">
+            <span class="how__num t-display" aria-hidden="true">1</span>
+            <p class="t-label">Step 1 of 3</p>
+            <h3 class="t-h2">Pick an exercise</h3>
+            <p class="t-body">Filter by the muscle you want to work, or start with No. 01.</p>
+          </li>
+          <li class="how__step">
+            <span class="how__num t-display" aria-hidden="true">2</span>
+            <p class="t-label">Step 2 of 3</p>
+            <h3 class="t-h2">Go step by step</h3>
+            <p class="t-body">Each step is one small position to get right.</p>
+          </li>
+          <li class="how__step">
+            <span class="how__num t-display" aria-hidden="true">3</span>
+            <p class="t-label">Step 3 of 3</p>
+            <h3 class="t-h2">See it from the best angle</h3>
+            <p class="t-body">The view turns to show what matters.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="close" aria-labelledby="close-title">
+        <div class="close__inner grid">
+          <h2 class="close__title t-h1" id="close-title">Ready? Start with the Seated Cable Row.</h2>
+          <a class="glass" href="exercise.html?id=seated-cable-row"><span class="glass__label">Start Seated Cable Row</span></a>
+        </div>
+      </section>
+    </main>
     <script type="module" src="/src/pages/landing.ts"></script>
   </body>
 </html>

@@ -1,0 +1,214 @@
+::selection { background: var(--paper); color: var(--ink); }
+html { scrollbar-color: var(--flood-light) var(--flood-deep); }
+body { position: relative; overflow-x: clip; }
+
+/* Content sits above the parallax backdrop */
+.site-header, main { position: relative; z-index: 1; }
+
+/* ---------- Parallax backdrop ---------- */
+.parallax {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100svh;
+  z-index: 0;
+  overflow: clip;
+  pointer-events: none;
+  /* Layers sink behind "How it works" as they lag the scroll; fade them out instead of a hard edge */
+  mask-image: linear-gradient(#000 78%, transparent);
+}
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.layer__numerals {
+  fill: none;
+  stroke: var(--flood-light);
+  stroke-width: var(--stroke);
+  vector-effect: non-scaling-stroke;
+  font-family: 'Archivo Variable', system-ui, sans-serif;
+  font-size: 720px;
+  font-stretch: 125%;
+  font-weight: 900;
+}
+.layer__numerals text { vector-effect: non-scaling-stroke; }
+.layer--mid { fill: var(--flood-mid); }
+.layer__lines {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: var(--stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.layer__lines path { vector-effect: non-scaling-stroke; }
+
+/* ---------- First viewport ---------- */
+.hero {
+  min-height: calc(100svh - 72px);
+  padding-block: var(--s2) var(--s6);
+  align-items: center;
+}
+
+.demo {
+  --mq-fill: var(--flood-deep);
+  grid-column: 1 / span 7;
+  align-self: stretch;
+  position: relative;
+  min-height: 420px;
+  margin: 0;
+  border-radius: var(--r-panel);
+  background: var(--flood-deep);
+  overflow: hidden;
+}
+/* The manual's inset frame line */
+.demo::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: var(--rule);
+  border-radius: calc(var(--r-panel) - 12px);
+  pointer-events: none;
+}
+.demo__label {
+  position: absolute;
+  top: calc(12px + var(--s4));
+  left: calc(12px + var(--s5));
+  z-index: 1;
+}
+.demo__video {
+  position: absolute;
+  inset: 56px var(--s6) var(--s6);
+  width: calc(100% - 2 * var(--s6));
+  height: calc(100% - 56px - var(--s6));
+  object-fit: contain;
+}
+.demo__video[hidden] { display: none; }
+
+.demo__toggle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  padding: var(--s4) var(--s6);
+  border: 2px solid var(--ink); /* keeps the paper pill readable over a light poster */
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+.demo__toggle[hidden] { display: none; }
+/* While playing, the control tucks into the frame's corner */
+.demo[data-playing] .demo__toggle {
+  left: auto;
+  top: auto;
+  right: calc(12px + var(--s4));
+  bottom: calc(12px + var(--s4));
+  padding: var(--s2) var(--s4);
+  transform: none;
+}
+
+.demo__placeholder {
+  position: absolute;
+  inset: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s3);
+  padding: var(--s8) var(--s6) var(--s6);
+  text-align: center;
+}
+.demo__placeholder[hidden] { display: none; }
+.demo__placeholder .mannequin { width: min(100%, 560px); flex: 0 1 auto; min-height: 0; margin-bottom: var(--s4); }
+.demo__path { text-transform: none; color: var(--paper-soft); }
+
+/* ---------- Mannequin line drawing (shared with exercise.html) ---------- */
+.mannequin { display: block; color: var(--paper); overflow: visible; }
+.mannequin path, .mannequin rect, .mannequin circle {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mq-line { stroke: currentColor; stroke-width: var(--stroke); }
+.mq-cable { stroke-width: 2; }
+.mq-far { color: var(--flood-light); }
+.mq-o { stroke: currentColor; }
+.mq-i { stroke: var(--mq-fill, var(--flood-deep)); }
+.mannequin .mq-joint { fill: var(--mq-fill, var(--flood-deep)); stroke: currentColor; stroke-width: var(--stroke); }
+
+/* ---------- CTA column ---------- */
+.cta {
+  grid-column: 8 / -1;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.cta__title {
+  /* Display size, capped so "catalogue" always fits the column */
+  font-size: min(clamp(64px, 10vw, 168px), 15.6cqi);
+  margin: var(--s5) 0 var(--s6);
+}
+.cta .t-body { margin-bottom: var(--s7); }
+
+/* ---------- How it works ---------- */
+.how {
+  padding-block: var(--s9);
+  row-gap: var(--s7);
+}
+.how__title { grid-column: 1 / -1; }
+.how__steps {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.how__step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-content: start;
+  column-gap: var(--s4);
+  padding-top: var(--s5);
+  border-top: var(--rule);
+}
+.how__num { grid-row: 1 / span 2; }
+.how__step .t-label { align-self: end; padding-bottom: var(--s1); }
+.how__step h3 { margin: 0; align-self: end; text-wrap: balance; }
+.how__step .t-body { grid-column: 1 / -1; margin-top: var(--s5); color: var(--paper-soft); }
+
+/* ---------- Close band ---------- */
+.close {
+  background: var(--flood-deep);
+  padding-block: var(--s9);
+}
+.close__inner { align-items: end; row-gap: var(--s6); }
+.close__title { grid-column: 1 / span 8; text-wrap: balance; }
+.close .glass { grid-column: 9 / -1; justify-self: end; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 899px) {
+  .hero {
+    min-height: 0;
+    padding-block: var(--s2) var(--s5);
+    row-gap: var(--s5);
+  }
+  .demo, .cta { grid-column: 1 / -1; }
+  .demo { height: 46svh; min-height: 260px; }
+  .demo__placeholder { padding: var(--s7) var(--s4) var(--s4); gap: var(--s2); }
+  .demo__placeholder .mannequin { margin-bottom: var(--s2); }
+  .cta__title { margin: var(--s3) 0 var(--s4); }
+  .cta .t-body { margin-bottom: var(--s5); }
+  .how__steps { grid-template-columns: 1fr; gap: var(--s7); }
+  .close__title, .close .glass { grid-column: 1 / -1; justify-self: start; }
+}
+@media (max-width: 599px) {
+  .layer--far, .layer--mid { display: none; }
+  .layer__pull { display: none; } /* would cross the body copy at phone width */
+}
