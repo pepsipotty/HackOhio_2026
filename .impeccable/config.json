@@ -11,6 +11,33 @@
         ],
         "createdAt": "2026-10-24T19:00:52.651Z",
         "reason": "controller: browser-measured sizes 100/60/32/18px (min step 1.67x) after hierarchy fix 126c1a4; detector reads clamp()/cqi statically"
+      },
+      {
+        "rule": "wide-tracking",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-24T19:40:13.598Z",
+        "reason": "controller: 0.08em is the design-system .t-label (13px uppercase caption); only lowercase use is the short demo.mp4 file-path caption"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-24T19:40:14.077Z",
+        "reason": "controller: .close band's child .grid carries padding-inline var(--pad-x) 16-56px plus s9 block padding; detector measures wrapper box"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "catalogue.html"
+        ],
+        "createdAt": "2026-10-24T19:40:14.591Z",
+        "reason": "controller: .filters band's child .filters__inner carries padding s4/pad-x/s5; detector measures wrapper box"
       }
     ]
   }
