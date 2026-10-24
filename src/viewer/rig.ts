@@ -13,6 +13,7 @@ import {
 } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { JOINT_NAMES, JOINT_PARENT, type JointName } from '../data/joints'
+import { adaptHumanoid, HUMANOID_BONES } from './humanoid'
 
 export { JOINT_NAMES, type JointName } from '../data/joints'
 
@@ -21,6 +22,7 @@ export interface Rig {
   joints: Record<JointName, Object3D>
   rest: Record<JointName, Quaternion>
   placeholder: boolean
+  update?(): void
 }
 
 // Fill when a GLB's bone names differ from JOINT_NAMES, e.g. { pelvis: 'mixamorigHips' }.
@@ -111,6 +113,7 @@ export async function loadRig(url: string, material: Material): Promise<Rig> {
     if (!head.ok || head.headers.get('content-type')?.includes('text/html')) throw new Error(`no model at ${url}`)
     found = true
     const gltf = await new GLTFLoader().loadAsync(url)
+    if (gltf.scene.getObjectByName(HUMANOID_BONES.pelvis)) return adaptHumanoid(gltf.scene)
     const joints = {} as Record<JointName, Object3D>
     const rest = {} as Record<JointName, Quaternion>
     for (const j of JOINT_NAMES) {

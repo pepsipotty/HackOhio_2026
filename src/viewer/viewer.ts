@@ -1,15 +1,14 @@
 // The exercise page's 3D view: animated camera presets, joint poses, orbit, and rep playback.
 // Renders on demand: the rAF loop only runs while a tween, playback or orbit damping is active.
 import {
-  BoxGeometry, Color, DataTexture, DirectionalLight, Euler, GridHelper, HemisphereLight,
-  Mesh, MeshBasicMaterial, MeshToonMaterial, NearestFilter, PerspectiveCamera, Quaternion, RedFormat,
+  Color, DataTexture, DirectionalLight, Euler, GridHelper, HemisphereLight,
+  Mesh, MeshToonMaterial, NearestFilter, PerspectiveCamera, Quaternion, RedFormat,
   SRGBColorSpace, Scene, Spherical, Vector3, WebGLRenderer, type Material,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { Line2 } from 'three/examples/jsm/lines/Line2.js'
-import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
-import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
+import { createCableRowComposite } from './cable-row-composite'
 import { JOINT_NAMES, loadRig } from './rig'
+import { createMuscleInteraction } from './muscle-interaction'
 import { MODEL_URL } from '../data/media'
 import { Tween, samplePose } from '../lib/tween'
 import type { CameraPreset, Easing, ExerciseMotion, Pose, View } from '../data/motion'
@@ -21,12 +20,14 @@ export interface Viewer {
   pause(): void
   seek(t: number): void
   readonly placeholder: boolean
+  readonly muscleGroups: string[]
+  toggleMuscle(id: string): void
+  clearMuscles(): void
+  onMusclesChange(callback: (groups: string[]) => void): void
   dispose(): void
 }
 
 const DEG = Math.PI / 180
-const PULLEY = new Vector3(0, 0.55, 1.4)
-const UP = new Vector3(0, 1, 0)
 
 // three's Color can't parse oklch(), so let the browser paint the token and read the pixel back.
 function tokenColor(token: string): Color {
@@ -63,39 +64,13 @@ export async function createViewer(
   gradientMap.needsUpdate = true
   const skin = new MeshToonMaterial({ color: paper, gradientMap })
 
-  // The station: flat --flood-mid shapes, the figure faces +Z toward the stack.
-  const flat = new MeshBasicMaterial({ color: mid })
-  const box = (size: [number, number, number], pos: [number, number, number], tiltX = 0) => {
-    const m = new Mesh(new BoxGeometry(...size), flat)
-    m.position.set(...pos)
-    m.rotation.x = tiltX
-    scene.add(m)
-  }
-  box([0.38, 0.08, 1.05], [0, 0.35, -0.38]) // seat, top at the seated pelvis's underside
-  box([0.08, 0.31, 0.08], [0, 0.155, -0.8])
-  box([0.08, 0.31, 0.08], [0, 0.155, 0.05])
-  box([0.06, 0.04, 2.9], [0, 0.02, 0.35]) // floor rail
-  box([0.56, 0.42, 0.04], [0, 0.22, 0.92], 0.52) // foot platform, square to the seated shins
-  // weight stack: thin guide rods and caps, then separate plate slabs so the gaps read as a stack
-  box([0.03, 1.9, 0.03], [-0.22, 0.95, 1.75])
-  box([0.03, 1.9, 0.03], [0.22, 0.95, 1.75])
-  box([0.56, 0.06, 0.3], [0, 1.92, 1.75])
-  box([0.56, 0.05, 0.3], [0, 0.025, 1.75])
-  for (let k = 0; k < 12; k++) box([0.4, 0.06, 0.26], [0, 0.1 + k * 0.085, 1.75])
-  box([0.12, 0.12, 0.2], [0, 0.55, 1.5]) // pulley housing
-  const grid = new GridHelper(10, 20, mid, mid)
-  scene.add(grid)
-
-  // The cable: a 2px screen-space white line (a world-space tube goes sub-pixel at the presets).
-  const line = new LineMaterial({ color: paper, linewidth: 2 })
-  // fixed run: low pulley, up the frame, over the top and down to the top plate
-  const run = new Line2(new LineGeometry().setPositions([0, 0.55, 1.55, 0, 1.86, 1.55, 0, 1.86, 1.7, 0, 1.07, 1.7]), line)
-  // moving run: hands to the low pulley; a unit segment along Y, stretched and aimed every frame
-  const cable = new Line2(new LineGeometry().setPositions([0, -0.5, 0, 0, 0.5, 0]), line)
-  scene.add(run, cable)
-
   const rig = await loadRig(MODEL_URL, skin)
-  scene.add(rig.root)
+  const composite = createCableRowComposite(rig)
+  // Reorient the native gym assembly to the exercise camera/pose convention.
+  composite.root.rotation.y = -Math.PI / 2
+  composite.root.position.z = 1.85
+  scene.add(composite.root)
+  scene.add(new GridHelper(10, 20, mid, mid))
   const pelvis = rig.joints.pelvis
 
   const euler = new Euler()
@@ -106,6 +81,7 @@ export async function createViewer(
       return rig.rest[j].clone().multiply(q.setFromEuler(euler.set(a[0] * DEG, a[1] * DEG, a[2] * DEG, 'XYZ')))
     })
   const applyPose = (pose: Pose) => {
+    composite.restorePose()
     targetsOf(pose).forEach((t, k) => rig.joints[JOINT_NAMES[k]].quaternion.copy(t))
     if (pose.root) pelvis.position.set(...pose.root.position)
   }
@@ -114,6 +90,7 @@ export async function createViewer(
   type PoseAnim = { tween: Tween; fromQ: Quaternion[]; toQ: Quaternion[]; fromP: Vector3; toP: Vector3 }
   let poseAnim: PoseAnim | null = null
   const startPose = (pose: Pose, duration: number, easing: Easing, now: number) => {
+    composite.restorePose()
     poseAnim = {
       tween: new Tween([0], [1], duration, easing, now),
       fromQ: JOINT_NAMES.map((j) => rig.joints[j].quaternion.clone()),
@@ -165,19 +142,6 @@ export async function createViewer(
   }
   controls.addEventListener('start', () => (camTween = null)) // a drag takes over from the preset
 
-  const wristL = new Vector3()
-  const wristR = new Vector3()
-  const updateCable = () => {
-    rig.joints.wrist_L.getWorldPosition(wristL)
-    rig.joints.wrist_R.getWorldPosition(wristR)
-    const hands = wristL.add(wristR).multiplyScalar(0.5)
-    cable.visible = hands.z > 0.12 // only once the hands reach forward for the handle
-    const dir = off.subVectors(PULLEY, hands)
-    cable.position.copy(hands).addScaledVector(dir, 0.5)
-    cable.scale.set(1, dir.length(), 1)
-    cable.quaternion.setFromUnitVectors(UP, dir.normalize())
-  }
-
   // Rep track; without one, the step poses play in order.
   const rep = motion.rep ?? {
     duration: motion.steps.reduce((s, x) => s + x.duration, 0),
@@ -202,18 +166,19 @@ export async function createViewer(
       if (camTween.done(now)) camTween = null
       else busy = true
     }
+    composite.restorePose()
     stepPose(now)
     if (poseAnim) busy = true
     if (playing) {
       if (!poseAnim) {
         t = (t + dt / rep.duration) % 1
-        applyPose(samplePose(rep.keys, t))
+        applyPose(samplePose(rep.keys, t, true))
       }
       opts.onPlayback(t, true)
       busy = true
     }
     busy = controls.update() || busy
-    updateCable()
+    composite.sync()
     renderer.render(scene, camera)
     if (busy) request()
     else last = 0
@@ -250,9 +215,15 @@ export async function createViewer(
   applyPose(motion.steps[0].pose)
   request()
 
+  const muscleInteraction = createMuscleInteraction(rig.root, camera, renderer.domElement, request)
+
   const ms = (d: number) => (opts.reducedMotion ? 0 : d)
   return {
     placeholder: rig.placeholder,
+    muscleGroups: muscleInteraction.groups,
+    toggleMuscle: muscleInteraction.toggle,
+    clearMuscles: muscleInteraction.clear,
+    onMusclesChange: muscleInteraction.subscribe,
     goTo(i) {
       const s = motion.steps[i]
       if (!s) return
@@ -270,7 +241,7 @@ export async function createViewer(
     play() {
       if (playing) return
       // ease into the rep's current frame instead of snapping to it
-      startPose(samplePose(rep.keys, t), ms(400), 'easeOut', performance.now())
+      startPose(samplePose(rep.keys, t, true), ms(400), 'easeOut', performance.now())
       playing = true
       request()
     },
@@ -282,7 +253,7 @@ export async function createViewer(
       playing = false
       poseAnim = null
       t = Math.min(Math.max(v, 0), 1)
-      applyPose(samplePose(rep.keys, t))
+      applyPose(samplePose(rep.keys, t, true))
       opts.onPlayback(t, false)
       request()
     },
@@ -292,10 +263,12 @@ export async function createViewer(
       ro.disconnect()
       document.removeEventListener('visibilitychange', onVisibility)
       controls.dispose()
+      muscleInteraction.dispose()
       scene.traverse((o) => {
         const m = o as Mesh
         m.geometry?.dispose()
-        ;(m.material as Material | undefined)?.dispose?.()
+        const materials = Array.isArray(m.material) ? m.material : [m.material]
+        for (const material of materials) material?.dispose?.()
       })
       gradientMap.dispose()
       renderer.dispose()

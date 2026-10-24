@@ -58,3 +58,14 @@ describe('samplePose', () => {
     expect(samplePose(keys, 0.5).root?.position).toEqual([2, 4, 6])
   })
 })
+
+test('smooth pose sampling eases reversals without overshooting joint limits', () => {
+  const keys = [{ t: 0, pose: { joints: { elbow_L: [0, 0, 0] } } as Pose }, { t: 1, pose: { joints: { elbow_L: [100, 0, 0] } } as Pose }]
+  expect(samplePose(keys, .001, true).joints.elbow_L![0]).toBeLessThan(.001)
+  expect(100 - samplePose(keys, .999, true).joints.elbow_L![0]).toBeLessThan(.001)
+  for (let t = 0; t <= 1; t += .05) {
+    const angle = samplePose(keys, t, true).joints.elbow_L![0]
+    expect(angle).toBeGreaterThanOrEqual(0)
+    expect(angle).toBeLessThanOrEqual(100)
+  }
+})

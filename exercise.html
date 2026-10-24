@@ -119,6 +119,16 @@
         <div class="panel">
           <h1 class="t-h1 panel__name"></h1>
           <p class="t-label coach-note">Draft — to be reviewed by a qualified coach before public release.</p>
+          <details class="muscle-tools" hidden>
+            <summary>Explore muscle groups</summary>
+            <p data-muscle-status role="status">Click a muscle on the model, or choose a group below.</p>
+            <label for="muscle-group">Muscle group</label>
+            <select id="muscle-group"></select>
+            <div class="muscle-tools__actions">
+              <button class="chip" type="button" data-muscle-toggle>Toggle highlight</button>
+              <button class="chip" type="button" data-muscle-clear disabled>Clear highlights</button>
+            </div>
+          </details>
 
           <div class="stepbar">
             <div class="step-row-wrap">

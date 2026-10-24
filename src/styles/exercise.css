@@ -321,3 +321,13 @@ main { padding-block: var(--s2) var(--s9); }
   .viewport-msg[data-kind='loading'] .mannequin { animation: none; }
   .chip, .key, .now-bar, .btn-outline { transition: none; }
 }
+
+/* Muscle exploration shares the exercise page's controls and colour tokens. */
+.muscle-tools { margin-top: var(--s5); padding: var(--s4); border: 1px solid var(--paper-soft); border-radius: var(--r-card); }
+.muscle-tools summary { cursor: pointer; font-weight: 700; }
+.muscle-tools p { margin-block: var(--s3); font-size: 14px; line-height: 1.5; }
+.muscle-tools label { display: block; margin-bottom: var(--s2); font-size: 14px; }
+.muscle-tools select { width: 100%; min-height: 42px; padding: var(--s2) var(--s3); color: var(--paper); background: var(--flood-deep); border: 1px solid var(--paper); border-radius: 6px; font: inherit; }
+.muscle-tools__actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.muscle-tools .chip { min-height: 40px; font-size: 13px; }
+.muscle-tools .chip:disabled { opacity: .5; cursor: default; }

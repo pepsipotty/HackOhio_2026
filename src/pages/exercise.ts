@@ -5,6 +5,7 @@ import { clampStep, stepForKey } from '../lib/steps'
 import type { Exercise } from '../data/exercises'
 import { getMotion, type ExerciseMotion, type View } from '../data/motion'
 import type { Viewer } from '../viewer/viewer'
+import { MUSCLE_NAMES } from '../data/muscles'
 
 applyGlassSupport()
 
@@ -182,6 +183,18 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     delete nowWrap.dataset.now
     camSwitch.hidden = playback.hidden = false
     badge.hidden = !viewer.placeholder
+    const muscleTools = $('.muscle-tools', root)
+    muscleTools.hidden = viewer.muscleGroups.length === 0
+    const muscleSelect = $<HTMLSelectElement>('#muscle-group', root)
+    muscleSelect.replaceChildren(...viewer.muscleGroups.map(id => new Option(MUSCLE_NAMES[id] ?? id, id)))
+    $<HTMLButtonElement>('[data-muscle-toggle]', root).onclick = () => viewer?.toggleMuscle(muscleSelect.value)
+    $<HTMLButtonElement>('[data-muscle-clear]', root).onclick = () => viewer?.clearMuscles()
+    viewer.onMusclesChange(groups => {
+      $('[data-muscle-status]', root).textContent = groups.length
+        ? `Highlighted: ${groups.map(id => MUSCLE_NAMES[id] ?? id).join(', ')}`
+        : 'Click a muscle on the model, or choose a group below.'
+      $<HTMLButtonElement>('[data-muscle-clear]', root).disabled = groups.length === 0
+    })
     // hide on a timer: Animation.finished never settles while the page produces no frames (hidden/occluded window)
     if (!reduced) msg.animate({ opacity: [1, 0] }, { duration: 320, easing: 'ease-out', fill: 'forwards' })
     setTimeout(() => {

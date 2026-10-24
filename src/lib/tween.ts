@@ -41,13 +41,15 @@ export class Tween {
 const lerp3 = (a: readonly number[], b: readonly number[], u: number) =>
   a.map((x, i) => x + (b[i] - x) * u) as Vec3
 
-export function samplePose(keys: { t: number; pose: Pose }[], t: number): Pose {
+export function samplePose(keys: { t: number; pose: Pose }[], t: number, smooth = false): Pose {
   t = Math.min(Math.max(t, 0), 1)
   let i = keys.findIndex((k) => k.t >= t)
   if (i < 0) i = keys.length - 1
   const hi = keys[i]
   const lo = keys[Math.max(i - 1, 0)]
-  const u = hi.t === lo.t ? 1 : (t - lo.t) / (hi.t - lo.t)
+  const fraction = hi.t === lo.t ? 1 : (t - lo.t) / (hi.t - lo.t)
+
+  const u = smooth ? fraction * fraction * (3 - 2 * fraction) : fraction
 
   const joints: Pose['joints'] = {}
   for (const j of new Set([...Object.keys(lo.pose.joints), ...Object.keys(hi.pose.joints)]) as Set<JointName>) {

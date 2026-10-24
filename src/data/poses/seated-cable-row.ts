@@ -1,6 +1,7 @@
 // Draft — to be reviewed by a qualified coach before public release.
 // Joint angles: Euler degrees (XYZ) relative to the standing rest pose; positive X flexes.
 // See src/viewer/rig.ts for the full convention. root.position is the pelvis position.
+import { ROW_REFERENCE } from '../row-reference'
 import type { CameraPreset, ExerciseMotion, Pose, Vec3, View } from '../motion'
 
 const STANDING: Vec3 = [0.55, 1.0, 0] // beside the bench, so the legs don't pass through it
@@ -20,9 +21,9 @@ function pose(root: Vec3, spine: number, chest: number, hip: number, knee: numbe
   }
 }
 
-const SPINE_POSITION = pose(SEATED, 0, 0, 85, 25, 80, 0)
-const THE_PULL = pose(SEATED, 0, -4, 85, 25, 15, 105)
-const THE_SQUEEZE = pose(SEATED, 0, -8, 85, 25, -8, 115)
+const SPINE_POSITION = pose(SEATED, 10, 2, 85, 25, 72, 5)
+const THE_PULL = pose(SEATED, -6, -2, 85, 25, -5, 100)
+const THE_SQUEEZE = pose(SEATED, -8, -2, 85, 25, -8, 104)
 
 const TARGET: Vec3 = [0, 0.8, 0]
 const cam = (view: View, position: Vec3): CameraPreset => ({ view, position, target: TARGET, fov: 40 })
@@ -30,12 +31,12 @@ const cam = (view: View, position: Vec3): CameraPreset => ({ view, position, tar
 const motion: ExerciseMotion = {
   exerciseId: 'seated-cable-row',
   cameras: {
-    side: cam('side', [3.4, 1.2, 0]),
+    side: { view: 'side', position: [4.6, 1.6, .7], target: [0, .95, .7], fov: 40 },
     // looking down from just behind the head, so the figure faces up the screen toward the stack
     top: { view: 'top', position: [0.01, 4.6, 0.1], target: [0, 0.8, 0.3], fov: 40 },
     back: cam('back', [0, 1.4, -3.4]),
     // from behind and to the right, so the whole station (bench to weight stack) is in frame
-    iso: { view: 'iso', position: [3.0, 2.2, -1.8], target: [0, 0.7, 0.4], fov: 40 },
+    iso: { view: 'iso', position: [4.2, 2.8, -3.1], target: [0, 1.05, .8], fov: 40 },
   },
   steps: [
     {
@@ -47,7 +48,7 @@ const motion: ExerciseMotion = {
       cues: ['Pick a weight you could pull 15 times', 'Clip on the V-handle'],
       camera: 'iso',
       pose: pose(STANDING, 0, 0, 0, 0, 0, 5),
-      duration: 900,
+      duration: 1100,
       easing: 'easeInOut',
     },
     {
@@ -59,7 +60,7 @@ const motion: ExerciseMotion = {
       cues: ['Feet flat on the platform', 'Knees slightly bent'],
       camera: 'side',
       pose: pose(SEATED, 0, 0, 85, 25, 0, 10),
-      duration: 900,
+      duration: 1100,
       easing: 'easeInOut',
     },
     {
@@ -72,7 +73,7 @@ const motion: ExerciseMotion = {
       camera: 'top',
       // hip stays at 85: the pelvis is fixed, so extra hip flexion would lift the feet off the platform
       pose: pose(SEATED, 22, 8, 85, 25, 75, 0),
-      duration: 900,
+      duration: 1100,
       easing: 'easeInOut',
     },
     {
@@ -81,22 +82,22 @@ const motion: ExerciseMotion = {
       instruction:
         "Sit tall with a neutral spine — your back's natural, straight-ish shape, not slumped forward or leaning back. Lift your chest, let your shoulders drop away from your ears, and lightly tighten your stomach as if bracing for a gentle poke.",
       mistake: 'Slouching forward, or leaning far back to start the pull.',
-      cues: ['Chest up', 'Shoulders away from your ears', 'Your upper body stays still from here'],
+      cues: ['Chest up', 'Shoulders away from your ears', 'Keep the torso movement small'],
       camera: 'side',
       pose: SPINE_POSITION,
-      duration: 900,
+      duration: 1100,
       easing: 'easeInOut',
     },
     {
       id: 'the-pull',
       title: 'The pull',
       instruction:
-        'Pull the handle toward your upper stomach by driving your elbows straight back, keeping them close to your sides. Only your arms and shoulder blades move — your upper body stays upright.',
+        'Pull the handle toward your upper stomach by driving your elbows straight back, keeping them close to your sides. Let your elbows travel behind your ribs with a small, controlled torso hinge.',
       mistake: 'Rocking your body backward to swing the weight.',
       cues: ['Lead with your elbows', 'Elbows brush your sides', 'Breathe out as you pull'],
       camera: 'side',
       pose: THE_PULL,
-      duration: 900,
+      duration: 1100,
       easing: 'easeInOut',
     },
     {
@@ -108,28 +109,29 @@ const motion: ExerciseMotion = {
       cues: ['Hold for a count of one', 'Shoulders down and back'],
       camera: 'back',
       pose: THE_SQUEEZE,
-      duration: 900,
+      duration: 1100,
       easing: 'easeInOut',
     },
     {
       id: 'controlled-return',
       title: 'Controlled return',
       instruction:
-        "Slowly let your arms straighten, taking about two seconds, until they are long again and your shoulder blades spread apart a little. Keep sitting tall and don't let the weight pull you forward. That's one rep (one full pull and return)! When your set is done, guide the handle back slowly and rest the weight on the stack before you let go.",
+        "Slowly let your arms straighten, taking a little longer than the pull, until they are long again and your shoulder blades spread apart a little. Keep sitting tall and don't let the weight pull you forward. That's one rep (one full pull and return)! When your set is done, guide the handle back slowly and rest the weight on the stack before you let go.",
       mistake: 'Letting the weight snap back fast and yank you forward, or letting go of the handle while the weight is still up.',
-      cues: ['Count two on the way back', 'Breathe in', 'Stay tall'],
+      cues: ['Return more slowly than you pull', 'Breathe in', 'Stay tall'],
       camera: 'iso',
       pose: SPINE_POSITION,
-      duration: 900,
+      duration: 1100,
       easing: 'easeInOut',
     },
   ],
   rep: {
-    duration: 3000,
+    duration: ROW_REFERENCE.duration,
     keys: [
       { t: 0, pose: SPINE_POSITION },
-      { t: 0.4, pose: THE_PULL },
-      { t: 0.55, pose: THE_SQUEEZE },
+      { t: ROW_REFERENCE.pullEnd, pose: THE_SQUEEZE },
+      { t: ROW_REFERENCE.holdEnd, pose: THE_SQUEEZE },
+      { t: ROW_REFERENCE.returnEnd, pose: SPINE_POSITION },
       { t: 1, pose: SPINE_POSITION },
     ],
   },
