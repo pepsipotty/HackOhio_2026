@@ -1,0 +1,32 @@
+{
+  "name": "hackohio_2026",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite fbx-preview --config vite.config.mjs --host 127.0.0.1",
+    "build": "vite build fbx-preview --config vite.config.mjs",
+    "preview": "vite preview fbx-preview --config vite.config.mjs --host 127.0.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pepsipotty/HackOhio_2026.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pepsipotty/HackOhio_2026/issues"
+  },
+  "homepage": "https://github.com/pepsipotty/HackOhio_2026#readme",
+  "dependencies": {
+    "three": "^0.186.1",
+    "three-mesh-bvh": "^0.9.16",
+    "vite": "^8.3.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  },
+  "private": true
+}

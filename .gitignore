@@ -1,0 +1,5 @@
+node_modules/
+fbx-preview/dist/
+fbx-preview/public/*.fbx
+.impeccable/review/
+/hackohio dev dashboard/

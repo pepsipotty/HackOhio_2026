@@ -1,0 +1,7 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {defineConfig} from 'vite';
+export default defineConfig({
+ build:{rollupOptions:{input:{main:path.resolve('fbx-preview/index.html'),anatomy:path.resolve('fbx-preview/anatomy.html')}}},
+ plugins:[{name:'local-back-feedback',configureServer(server){server.middlewares.use('/api/back-feedback',(req,res,next)=>{if(req.method!=='POST'){res.statusCode=405;res.end('POST required');return;}let raw='',size=0;req.on('data',chunk=>{size+=chunk.length;if(size>3_000_000){res.statusCode=413;res.end('Feedback too large');req.destroy();}else raw+=chunk;});req.on('end',async()=>{try{const payload=JSON.parse(raw);if(typeof payload.note!=='string'||!payload.note.trim()||payload.note.length>10000||typeof payload.screenshot!=='string'||!payload.screenshot.startsWith('data:image/jpeg;base64,'))throw Error('Invalid feedback');const id=new Date().toISOString().replace(/[:.]/g,'-');const dir=path.resolve('feedback/back-study');await fs.mkdir(dir,{recursive:true});const image=Buffer.from(payload.screenshot.split(',')[1],'base64');delete payload.screenshot;await fs.writeFile(path.join(dir,id+'.jpg'),image);await fs.writeFile(path.join(dir,id+'.json'),JSON.stringify({...payload,screenshot:id+'.jpg'},null,2));res.setHeader('Content-Type','application/json');res.end(JSON.stringify({id}));}catch(error){res.statusCode=400;res.end(JSON.stringify({error:error.message}));}});});}}]
+});
