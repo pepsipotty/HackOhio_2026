@@ -14,11 +14,105 @@
         <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="2" result="noise" />
         <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" />
       </filter>
+      <!-- Movement-pattern pictograms: 64x64, white 1.5px line art, floor rule at y=56 -->
+      <defs>
+        <g id="icon-floor"><path d="M6 56h52" /></g>
+      </defs>
+      <symbol id="icon-push" viewBox="0 0 64 64">
+        <use href="#icon-floor" />
+        <circle cx="14" cy="14" r="4" />
+        <path d="M14 19v19l-5 18M14 38l5 18M14 24h14" />
+        <path d="M32 24h14M41 19l5 5-5 5" />
+        <rect x="50" y="10" width="6" height="28" rx="2" />
+      </symbol>
+      <symbol id="icon-pull" viewBox="0 0 64 64">
+        <use href="#icon-floor" />
+        <circle cx="14" cy="14" r="4" />
+        <path d="M14 19v19l-5 18M14 38l5 18M14 24h10" />
+        <path d="M46 24H30M35 19l-5 5 5 5" />
+        <rect x="50" y="10" width="6" height="28" rx="2" />
+      </symbol>
+      <symbol id="icon-squat" viewBox="0 0 64 64">
+        <use href="#icon-floor" />
+        <circle cx="27" cy="13" r="4" />
+        <path d="M27 18l-5 16 14 2-2 20M26 24l9 3" />
+        <path d="M50 14v32M45 19l5-5 5 5M45 41l5 5 5-5" />
+      </symbol>
+      <symbol id="icon-hinge" viewBox="0 0 64 64">
+        <use href="#icon-floor" />
+        <circle cx="13" cy="21" r="4" />
+        <path d="M18 24l18 10-2 11 2 11M18 24v14" />
+        <path d="M20 12Q34 6 42 18M36 16.5l6 1.5 1-6" />
+      </symbol>
+      <symbol id="icon-lunge" viewBox="0 0 64 64">
+        <use href="#icon-floor" />
+        <circle cx="30" cy="10" r="4" />
+        <path d="M30 15v19l12 2v20M30 34l-10 16-12 6" />
+        <path d="M50 20v24M45 39l5 5 5-5" />
+      </symbol>
+      <symbol id="icon-carry" viewBox="0 0 64 64">
+        <use href="#icon-floor" />
+        <circle cx="26" cy="12" r="4" />
+        <path d="M26 17v19l-6 20M26 36l6 20M26 21l-10 11M26 21l10 11" />
+        <rect x="12" y="32" width="8" height="9" rx="1.5" />
+        <rect x="32" y="32" width="8" height="9" rx="1.5" />
+        <path d="M44 46h14M53 41l5 5-5 5" />
+      </symbol>
+      <symbol id="icon-core" viewBox="0 0 64 64">
+        <use href="#icon-floor" />
+        <circle cx="50" cy="38" r="4" />
+        <path d="M8 56l36-14v14" />
+        <path d="M10.4 44.4l24-9.4M11.5 47.2l-2.2-5.6M35.5 37.8l-2.2-5.6" />
+      </symbol>
     </svg>
     <header class="site-header">
-      <a class="wordmark" href="/">REP ONE</a>
+      <a class="wordmark" href="./">REP ONE</a>
+      <span class="t-label">Form, one step at a time</span>
     </header>
-    <main id="main"></main>
+    <main id="main">
+      <div class="cat-title grid">
+        <h1 class="t-h1">The catalogue</h1>
+        <p class="t-body">Start with No. 01, or filter by what you want to train.</p>
+      </div>
+
+      <section class="filters" aria-label="Filter and sort">
+        <div class="filters__inner">
+          <button class="filters__toggle t-label" type="button" aria-expanded="false" aria-controls="filter-panel">
+<span>Filters (<span data-filter-count>0</span>)</span></button>
+          <div class="filters__panel" id="filter-panel"></div>
+          <div class="sort">
+            <label class="t-label" for="sort">Sort by</label>
+            <select id="sort">
+              <option value="recommended">Recommended</option>
+              <option value="az">A–Z</option>
+              <option value="easiest">Easiest first</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <div class="results">
+        <div class="results__line">
+          <p class="results__count t-label" aria-live="polite" id="count"></p>
+          <ul class="results__active" aria-label="Active filters"></ul>
+          <button class="results__clear t-label" type="button" data-clear hidden>Clear all</button>
+        </div>
+
+        <ul class="cards" id="cards"></ul>
+
+        <div class="empty" id="empty" hidden>
+          <svg class="empty__frame" viewBox="0 0 160 160" aria-hidden="true" focusable="false">
+            <rect x="1" y="1" width="158" height="158" rx="32" />
+            <path d="M44 44l72 72M116 44l-72 72" />
+          </svg>
+          <div class="empty__text">
+            <h2 class="t-h2">No exercises match those filters.</h2>
+            <p class="t-body">Try removing one, or start fresh.</p>
+            <button class="glass" type="button" data-clear><span class="glass__label">Clear filters</span></button>
+          </div>
+        </div>
+      </div>
+    </main>
     <script type="module" src="/src/pages/catalogue.ts"></script>
   </body>
 </html>
