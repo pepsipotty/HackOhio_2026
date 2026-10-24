@@ -26,10 +26,10 @@ body { position: relative; overflow-x: clip; }
 .layer__numerals {
   fill: none;
   stroke: var(--flood-light);
-  stroke-width: var(--stroke);
+  stroke-width: 2px;
   vector-effect: non-scaling-stroke;
   font-family: 'Archivo Variable', system-ui, sans-serif;
-  font-size: 720px;
+  font-size: 560px;
   font-stretch: 125%;
   font-weight: 900;
 }
@@ -153,8 +153,12 @@ body { position: relative; overflow-x: clip; }
   font-size: min(clamp(64px, 10vw, 168px), 18.8cqi);
   font-stretch: 100%; /* wdth 100 so "catalogue" fits cols 8–12 at near-true Display size */
   margin: 0 0 var(--s6);
+  /* A flood halo cut round each glyph, so the outline numeral passes behind the letters without touching them */
+  paint-order: stroke fill;
+  -webkit-text-stroke: 16px var(--flood);
 }
-.cta .t-body { margin-bottom: var(--s7); }
+/* The copy sits on its own cut of flood, so no backdrop line crosses it at any parallax offset */
+.cta .t-body { margin-bottom: var(--s7); background: var(--flood); outline: var(--s4) solid var(--flood); }
 
 /* ---------- How it works ---------- */
 .how {
