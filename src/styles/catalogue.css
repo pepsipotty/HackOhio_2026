@@ -9,14 +9,14 @@ html { scrollbar-color: var(--flood-light) var(--flood-deep); }
 /* ---------- Title ---------- */
 .cat-title {
   row-gap: var(--s4);
-  padding-block: var(--s7) var(--s6);
+  padding-block: var(--s5);
 }
 .cat-title > * { grid-column: 1 / -1; }
 .cat-title p { color: var(--paper-soft); }
 
 /* ---------- Filter bar ---------- */
 .filters { background: var(--flood-deep); }
-/* Desktop: groups and the sort share one wrapping row so the sticky band stays short. */
+/* Desktop: groups and the sort share one wrapping row so the band stays short. */
 .filters__inner {
   display: flex;
   flex-wrap: wrap;
@@ -106,11 +106,6 @@ html { scrollbar-color: var(--flood-light) var(--flood-deep); }
 .sort select:hover { background-color: var(--flood); }
 .sort option { background: var(--paper); color: var(--ink); }
 
-@media (min-width: 1024px) and (min-height: 760px) {
-  .filters { position: sticky; top: 0; z-index: 10; }
-  .card { scroll-margin-top: 260px; } /* keyboard focus never lands under the sticky band */
-}
-
 @media (max-width: 767px) {
   .filters__inner {
     flex-wrap: wrap;
@@ -148,7 +143,7 @@ html { scrollbar-color: var(--flood-light) var(--flood-deep); }
 .results {
   max-width: 1440px;
   margin-inline: auto;
-  padding: var(--s6) var(--pad-x) var(--s9);
+  padding: var(--s5) var(--pad-x) var(--s9);
 }
 .results__line {
   display: flex;
@@ -156,7 +151,7 @@ html { scrollbar-color: var(--flood-light) var(--flood-deep); }
   align-items: center;
   gap: var(--s3) var(--s4);
   min-height: 40px;
-  margin-bottom: var(--s6);
+  margin-bottom: var(--s5);
 }
 .results__count { font-variant-numeric: tabular-nums; }
 .results__active {

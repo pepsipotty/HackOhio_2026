@@ -14,7 +14,7 @@ import {
 applyGlassSupport()
 
 type Group = 'muscle' | 'equipment' | 'pattern' | 'difficulty'
-// Level sits second so MUSCLE + LEVEL share the first row at 1440px, keeping the sticky band two rows tall.
+// Level sits second so MUSCLE + LEVEL share the first row at 1440px, keeping the band two rows tall.
 const GROUPS: [Group, string, readonly string[]][] = [
   ['muscle', 'Muscle', MUSCLES],
   ['difficulty', 'Level', DIFFICULTIES],
@@ -77,7 +77,7 @@ function cardHTML(e: Exercise): string {
         <p class="card__muscles t-label">${e.primary.map(cap).join(' · ')}</p>
         <p class="card__level t-label"><span class="bars bars--${level}" aria-hidden="true"><i></i><i></i><i></i></span>${cap(e.difficulty)}</p>
         <p class="card__text card__works">${e.works}</p>
-        <p class="card__text"><strong>Why start here:</strong> ${e.why}</p>
+        <p class="card__text"><strong>${pinned ? 'Why start here:' : 'Why learn it:'}</strong> ${e.why}</p>
       </div>
     </a>
     <button class="preview-toggle t-label" type="button" aria-pressed="false" aria-label="Preview ${e.name}">Preview</button>
