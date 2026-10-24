@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && tsc --noEmit -p tests && vite build && node scripts/check-budget.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
