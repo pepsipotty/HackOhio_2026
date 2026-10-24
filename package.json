@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/check-budget.mjs",
+    "build": "tsc --noEmit && tsc --noEmit -p tests && vite build && node scripts/check-budget.mjs",
     "test": "vitest run"
   },
   "repository": {
