@@ -42,9 +42,9 @@ const motion: ExerciseMotion = {
       id: 'setup',
       title: 'Setup',
       instruction:
-        'Find the seated cable row station and clip on the V-handle (a handle with two grips side by side). Pick a light weight — one you could lift about 15 times without straining.',
+        'Find the seated cable row station and clip on the V-handle (a handle with two grips side by side). Slide the pin into a light weight, one you could pull about 15 times with steady form.',
       mistake: "Starting too heavy. If you have to lean back or jerk the weight, it's too much.",
-      cues: ['Choose a weight you could lift 15 times', 'Clip on the V-handle'],
+      cues: ['Pick a weight you could pull 15 times', 'Clip on the V-handle'],
       camera: 'iso',
       pose: pose(STANDING, 0, 0, 0, 0, 0, 5),
       duration: 900,
@@ -115,8 +115,8 @@ const motion: ExerciseMotion = {
       id: 'controlled-return',
       title: 'Controlled return',
       instruction:
-        "Let your arms straighten slowly, taking about two seconds, until they're long again and your shoulder blades spread apart. Keep sitting tall — don't let the weight pull you forward. That's one rep!",
-      mistake: 'Letting the weight snap back fast and yank you forward.',
+        "Slowly let your arms straighten, taking about two seconds, until they are long again and your shoulder blades spread apart a little. Keep sitting tall and don't let the weight pull you forward. That's one rep (one full pull and return)! When your set is done, guide the handle back slowly and rest the weight on the stack before you let go.",
+      mistake: 'Letting the weight snap back fast and yank you forward, or letting go of the handle while the weight is still up.',
       cues: ['Count two on the way back', 'Breathe in', 'Stay tall'],
       camera: 'iso',
       pose: SPINE_POSITION,

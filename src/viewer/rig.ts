@@ -104,10 +104,12 @@ export function buildMannequin(material: Material): Rig {
 }
 
 export async function loadRig(url: string, material: Material): Promise<Rig> {
+  let found = false
   try {
     // HEAD first so a missing model never reaches GLTFLoader (Vite's SPA fallback answers 200 with HTML).
     const head = await fetch(url, { method: 'HEAD' })
     if (!head.ok || head.headers.get('content-type')?.includes('text/html')) throw new Error(`no model at ${url}`)
+    found = true
     const gltf = await new GLTFLoader().loadAsync(url)
     const joints = {} as Record<JointName, Object3D>
     const rest = {} as Record<JointName, Quaternion>
@@ -118,7 +120,9 @@ export async function loadRig(url: string, material: Material): Promise<Rig> {
       rest[j] = bone.quaternion.clone()
     }
     return { root: gltf.scene, joints, rest, placeholder: false }
-  } catch {
+  } catch (err) {
+    // A missing file is the normal case and stays silent; a model that exists but fails is worth knowing about.
+    if (found) console.warn(`Rep One: could not use ${url}, falling back to the mannequin.`, err)
     return buildMannequin(material)
   }
 }
