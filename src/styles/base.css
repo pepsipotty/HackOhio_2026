@@ -1,0 +1,104 @@
+@import '@fontsource-variable/archivo/wdth.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { background: var(--flood); }
+
+body {
+  margin: 0;
+  background: var(--flood);
+  color: var(--paper);
+  font-family: 'Archivo Variable', system-ui, sans-serif;
+  font-stretch: 100%;
+  font-weight: 420;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+h1, h2, p { margin: 0; }
+a { color: inherit; }
+
+.t-display {
+  font-size: clamp(64px, 10vw, 168px);
+  font-stretch: 125%;
+  font-weight: 900;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+}
+.t-h1 {
+  font-size: clamp(40px, 5.2vw, 76px);
+  font-stretch: 112%;
+  font-weight: 800;
+  line-height: 0.95;
+}
+.t-h2 {
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-stretch: 100%;
+  font-weight: 750;
+  line-height: 1.1;
+}
+.t-body {
+  font-size: 18px;
+  font-stretch: 100%;
+  font-weight: 420;
+  line-height: 1.55;
+  max-width: 62ch;
+}
+.t-label {
+  font-size: 13px;
+  font-stretch: 88%;
+  font-weight: 700;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+@media (max-width: 479px) {
+  body, .t-body { font-size: 17px; }
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--s4);
+  top: var(--s4);
+  z-index: 100;
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible { transform: none; }
+
+:focus-visible {
+  outline: 3px solid var(--paper);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--ink);
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+  padding: 0 var(--pad-x);
+}
+.wordmark {
+  font-size: 28px;
+  font-stretch: 125%;
+  font-weight: 900;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--gutter);
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: var(--pad-x);
+}
+
+.sr-only-svg { position: absolute; width: 0; height: 0; overflow: hidden; }

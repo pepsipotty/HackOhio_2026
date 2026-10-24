@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="only light" />
+    <meta name="description" content="A step-by-step guide to doing this exercise with good form." />
+    <title>Rep One — Exercise</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <svg class="sr-only-svg" aria-hidden="true" focusable="false">
+      <filter id="glass-distort">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="2" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" />
+      </filter>
+    </svg>
+    <header class="site-header">
+      <a class="wordmark" href="/">REP ONE</a>
+    </header>
+    <main id="main"></main>
+    <script type="module" src="/src/pages/exercise.ts"></script>
+  </body>
+</html>

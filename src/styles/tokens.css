@@ -1,0 +1,30 @@
+:root {
+  --flood: oklch(0.47 0.24 264);
+  --flood-deep: oklch(0.36 0.20 264);
+  --flood-mid: oklch(0.56 0.21 264);
+  --flood-light: oklch(0.70 0.14 264);
+  --paper: #ffffff;
+  --ink: oklch(0.28 0.16 264);
+  --ink-soft: oklch(0.42 0.12 264);
+  --paper-soft: oklch(0.90 0.05 264);
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+  --s9: 96px;
+
+  --r-panel: 32px;
+  --r-card: 20px;
+  --r-pill: 999px;
+
+  --rule: 2px solid var(--paper);
+  --stroke: 1.5px;
+  --gutter: var(--s5);
+  --pad-x: clamp(16px, 4vw, 56px);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

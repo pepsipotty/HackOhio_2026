@@ -1,0 +1,16 @@
+@view-transition { navigation: auto; }
+
+@keyframes rep-out { to { opacity: 0; transform: translateY(-16px); } }
+@keyframes rep-in { from { opacity: 0; } }
+
+::view-transition-old(root) { animation: 220ms var(--ease) both rep-out; }
+::view-transition-new(root) { animation: 280ms var(--ease) both rep-in; }
+
+::view-transition-group(exercise-hero) {
+  animation-duration: 450ms;
+  animation-timing-function: var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none; }
+}

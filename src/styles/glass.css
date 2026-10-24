@@ -1,0 +1,50 @@
+/* Markup: <a class="glass"><span class="glass__label">Browse exercises</span></a> */
+.glass {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 18px 30px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-stretch: 88%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 220ms var(--ease);
+}
+.glass__label { position: relative; z-index: 1; border-radius: var(--r-pill); }
+.glass__label::after { content: ' →'; }
+.glass:active { transform: scale(0.98); }
+
+.glass-refract .glass {
+  background: rgb(255 255 255 / 0.18);
+  backdrop-filter: url(#glass-distort) blur(6px) saturate(1.6);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.55);
+  color: var(--paper);
+  font-weight: 800;
+}
+.glass-refract .glass::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 50% 0;
+  background: linear-gradient(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0));
+  transform: translateX(-6px);
+  transition: transform 220ms var(--ease);
+  pointer-events: none;
+}
+.glass-refract .glass__label {
+  padding: 6px 14px;
+  margin: -6px -14px;
+  background: oklch(0.36 0.20 264 / 0.35);
+}
+.glass-refract .glass:hover { transform: scale(1.02); }
+.glass-refract .glass:hover::before { transform: translateX(6px); }
+.glass-refract .glass:active { transform: scale(0.98); }
+/* Focus: global :focus-visible ring (the rim shadow is replaced by the ring's box-shadow) */
