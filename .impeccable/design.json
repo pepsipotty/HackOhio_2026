@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T00:00:00Z",
+  "title": "Design System: Rep One",
+  "extensions": {
+    "colorMeta": {
+      "flood": { "role": "primary", "displayName": "Ultramarine Flood", "canonical": "oklch(0.47 0.24 264)", "tonalRamp": ["oklch(0.15 0.08 264)", "oklch(0.25 0.14 264)", "oklch(0.36 0.20 264)", "oklch(0.47 0.24 264)", "oklch(0.56 0.21 264)", "oklch(0.70 0.14 264)", "oklch(0.84 0.07 264)", "oklch(0.95 0.02 264)"] },
+      "flood-deep": { "role": "secondary", "displayName": "Deep Flood", "canonical": "oklch(0.36 0.20 264)", "tonalRamp": ["oklch(0.15 0.08 264)", "oklch(0.22 0.12 264)", "oklch(0.30 0.17 264)", "oklch(0.36 0.20 264)", "oklch(0.47 0.24 264)", "oklch(0.62 0.18 264)", "oklch(0.80 0.09 264)", "oklch(0.95 0.02 264)"] },
+      "flood-mid": { "role": "secondary", "displayName": "Mid Flood", "canonical": "oklch(0.56 0.21 264)", "tonalRamp": ["oklch(0.15 0.08 264)", "oklch(0.28 0.15 264)", "oklch(0.42 0.22 264)", "oklch(0.56 0.21 264)", "oklch(0.66 0.17 264)", "oklch(0.76 0.12 264)", "oklch(0.87 0.06 264)", "oklch(0.95 0.02 264)"] },
+      "flood-light": { "role": "secondary", "displayName": "Light Flood", "canonical": "oklch(0.70 0.14 264)", "tonalRamp": ["oklch(0.20 0.09 264)", "oklch(0.35 0.14 264)", "oklch(0.50 0.17 264)", "oklch(0.70 0.14 264)", "oklch(0.77 0.11 264)", "oklch(0.84 0.08 264)", "oklch(0.91 0.04 264)", "oklch(0.96 0.015 264)"] },
+      "paper": { "role": "neutral", "displayName": "Paper White", "canonical": "#ffffff", "tonalRamp": ["#1f1f1f", "#4a4a4a", "#767676", "#a0a0a0", "#c4c4c4", "#e0e0e0", "#f2f2f2", "#ffffff"] },
+      "paper-soft": { "role": "neutral", "displayName": "Paper Mist", "canonical": "oklch(0.90 0.05 264)", "tonalRamp": ["oklch(0.30 0.05 264)", "oklch(0.45 0.07 264)", "oklch(0.60 0.08 264)", "oklch(0.74 0.07 264)", "oklch(0.82 0.06 264)", "oklch(0.90 0.05 264)", "oklch(0.95 0.03 264)", "oklch(0.98 0.01 264)"] },
+      "ink": { "role": "neutral", "displayName": "Manual Ink", "canonical": "oklch(0.28 0.16 264)", "tonalRamp": ["oklch(0.15 0.08 264)", "oklch(0.21 0.12 264)", "oklch(0.28 0.16 264)", "oklch(0.38 0.17 264)", "oklch(0.52 0.15 264)", "oklch(0.68 0.10 264)", "oklch(0.84 0.05 264)", "oklch(0.95 0.02 264)"] },
+      "ink-soft": { "role": "neutral", "displayName": "Ink Soft", "canonical": "oklch(0.42 0.12 264)", "tonalRamp": ["oklch(0.18 0.07 264)", "oklch(0.28 0.10 264)", "oklch(0.35 0.11 264)", "oklch(0.42 0.12 264)", "oklch(0.54 0.11 264)", "oklch(0.68 0.08 264)", "oklch(0.84 0.04 264)", "oklch(0.95 0.015 264)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero title and giant step numerals; expanded black (wdth 125)." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles, wdth 112." },
+      "title": { "displayName": "Title", "purpose": "Step titles and card names." },
+      "body": { "displayName": "Body", "purpose": "Instructions and coaching copy, max 62ch." },
+      "label": { "displayName": "Label", "purpose": "Uppercase wdth-88 captions: figure labels, step 'of 7', card numbers, filter labels." }
+    },
+    "shadows": [
+      { "name": "focus-halo", "value": "outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px var(--ink)", "purpose": "Every focus-visible state." },
+      { "name": "glass-rim", "value": "inset 0 0 0 1px rgb(255 255 255 / 0.55)", "purpose": "Edge of the liquid glass button." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.2, 0.8, 0.2, 1)", "purpose": "Single easing for all transitions." },
+      { "name": "duration-fast", "value": "160ms", "purpose": "Chip and preview fades." },
+      { "name": "duration-base", "value": "200-220ms", "purpose": "Keys, outline buttons, glass and card lift." },
+      { "name": "page-transition", "value": "220ms out / 280ms in; 450ms for the shared exercise-hero element", "purpose": "Cross-document view transitions; all disabled under reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "479px" },
+      { "name": "catalogue-filters", "value": "767px" },
+      { "name": "landing-stack", "value": "899px" },
+      { "name": "exercise-stack", "value": "1023px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Glass Button",
+      "kind": "button",
+      "refersTo": "button-glass",
+      "description": "Primary action: translucent white pill with a deep-flood label plate, over the blue.",
+      "html": "<a class=\"ds-glass\"><span class=\"ds-glass__label\">Browse exercises</span></a>",
+      "css": ".ds-glass{position:relative;display:inline-flex;align-items:center;overflow:hidden;padding:18px 30px;border-radius:999px;background:rgb(255 255 255/.18);box-shadow:inset 0 0 0 1px rgb(255 255 255/.55);color:#fff;font-size:15px;font-stretch:88%;font-weight:800;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:transform 220ms var(--ease)}.ds-glass::before{content:'';position:absolute;inset:0 -6px 50% -6px;background:linear-gradient(rgb(255 255 255/.45),rgb(255 255 255/0));pointer-events:none}.ds-glass__label{position:relative;padding:6px 14px;margin:-6px -14px;border-radius:999px;background:oklch(.36 .2 264/.65)}.ds-glass:hover{transform:scale(1.02)}.ds-glass:active{transform:scale(.98)}.ds-glass:focus-visible{outline:3px solid #fff;outline-offset:3px;box-shadow:inset 0 0 0 1px rgb(255 255 255/.55),0 0 0 6px var(--ink)}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action such as previous step.",
+      "html": "<button class=\"ds-btn-outline\">Back</button>",
+      "css": ".ds-btn-outline{padding:16px 28px;border:2px solid #fff;border-radius:999px;background:transparent;color:#fff;font:inherit;font-size:15px;font-stretch:88%;font-weight:700;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:background-color 200ms var(--ease)}.ds-btn-outline:hover{background:rgb(255 255 255/.14)}.ds-btn-outline:focus-visible{outline:3px solid #fff;outline-offset:3px;box-shadow:0 0 0 6px var(--ink)}"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Pill toggle; inverts to white when pressed.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"false\">Back</button> <button class=\"ds-chip\" aria-pressed=\"true\">Legs</button>",
+      "css": ".ds-chip{min-height:34px;padding:5px 11px;border:1.5px solid #fff;border-radius:999px;background:transparent;color:#fff;font:inherit;cursor:pointer;transition:background-color 160ms var(--ease),color 160ms var(--ease)}.ds-chip:hover{background:var(--flood)}.ds-chip[aria-pressed='true']{background:#fff;color:var(--ink)}.ds-chip:focus-visible{outline:3px solid #fff;outline-offset:3px;box-shadow:0 0 0 6px var(--ink)}"
+    },
+    {
+      "name": "Sort Select",
+      "kind": "input",
+      "refersTo": "chip",
+      "description": "Pill-shaped native select with drawn chevron.",
+      "html": "<select class=\"ds-select\"><option>Easiest first</option><option>Name</option></select>",
+      "css": ".ds-select{appearance:none;min-height:34px;padding:5px 42px 5px 16px;border:1.5px solid #fff;border-radius:999px;background:transparent url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E\") no-repeat right 16px center/12px 8px;color:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer}.ds-select:hover{background-color:var(--flood)}.ds-select:focus-visible{outline:3px solid #fff;outline-offset:3px;box-shadow:0 0 0 6px var(--ink)}"
+    },
+    {
+      "name": "Parts Card",
+      "kind": "card",
+      "refersTo": "parts-card",
+      "description": "White catalogue card with a flood preview window and giant tint numeral.",
+      "html": "<a class=\"ds-card\"><div class=\"ds-card__win\"><span class=\"ds-card__num\">01</span><span class=\"ds-card__no\">No. 01</span></div><div class=\"ds-card__body\"><h3>Seated Cable Row</h3><p>Back, biceps</p></div></a>",
+      "css": ".ds-card{display:block;width:300px;padding:6px;border-radius:20px;background:#fff;color:var(--ink);text-decoration:none;transition:transform 220ms var(--ease)}.ds-card:hover{transform:translateY(-4px)}.ds-card__win{position:relative;overflow:hidden;aspect-ratio:4/3;border-radius:14px;background:var(--flood);color:#fff}.ds-card__num{position:absolute;right:-.02em;bottom:-.2em;color:var(--flood-mid);font-size:150px;font-stretch:125%;font-weight:900;line-height:.86;letter-spacing:-.02em}.ds-card__no{position:absolute;top:12px;left:14px;font-size:13px;font-stretch:88%;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.ds-card__body{padding:16px 16px 24px}.ds-card__body h3{margin:0;font-size:24px;font-weight:750;line-height:1.1}.ds-card__body p{margin:8px 0 0;color:var(--ink-soft)}.ds-card:focus-visible{outline:3px solid #fff;outline-offset:3px;box-shadow:0 0 0 6px var(--ink)}"
+    },
+    {
+      "name": "Step Row",
+      "kind": "nav",
+      "refersTo": "step-key",
+      "description": "Signature: numbered keys on one unbroken rule with a sweeping now-bar.",
+      "html": "<div class=\"ds-steprow\"><ol><li><button class=\"ds-key\">1</button></li><li><button class=\"ds-key\" aria-selected=\"true\">2</button></li><li><button class=\"ds-key\">3</button></li><li><button class=\"ds-key\">4</button></li></ol></div>",
+      "css": ".ds-steprow ol{position:relative;display:flex;justify-content:space-between;margin:0;padding:0;list-style:none}.ds-steprow ol::before{content:'';position:absolute;inset:50% 0 auto;height:2px;margin-top:-1px;background:#fff}.ds-steprow li{position:relative;flex:0 1 56px}.ds-key{display:grid;place-items:center;width:100%;aspect-ratio:1;min-width:36px;padding:0;border:2px solid var(--flood-light);border-radius:6px;background:var(--flood);color:var(--paper-soft);font:inherit;font-size:18px;font-stretch:125%;font-weight:900;cursor:pointer;transition:background-color 200ms var(--ease),color 200ms var(--ease),border-color 200ms var(--ease)}.ds-key:hover{border-color:#fff;color:#fff}.ds-key[aria-selected='true']{border-color:#fff;background:#fff;color:var(--ink)}.ds-key:focus-visible{outline:3px solid #fff;outline-offset:3px;box-shadow:0 0 0 6px var(--ink)}"
+    },
+    {
+      "name": "Mistake Callout",
+      "kind": "custom",
+      "refersTo": "parts-card",
+      "description": "White card with an ink disc and drawn cross for the common mistake at a step.",
+      "html": "<div class=\"ds-mistake\"><svg viewBox=\"0 0 40 40\" width=\"40\" height=\"40\" aria-hidden=\"true\"><circle cx=\"20\" cy=\"20\" r=\"20\" fill=\"#0b1a6b\"/><path d=\"M13 13l14 14M27 13L13 27\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg><div><span class=\"ds-mistake__l\">Mistake</span><p>Shrugging the shoulders toward the ears.</p></div></div>",
+      "css": ".ds-mistake{display:flex;align-items:flex-start;gap:16px;padding:24px;border-radius:20px;background:#fff;color:var(--ink)}.ds-mistake svg{flex:none}.ds-mistake__l{font-size:13px;font-stretch:88%;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.ds-mistake p{margin:4px 0 0;max-width:62ch}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Assembly Manual",
+    "overview": "Rep One is a flat-pack instruction manual for your body, printed on a single ultramarine flood. The page is the colour: every page is blue, every mark is white. Exercises are numbered steps, each drawn as white line art from the angle that shows it best. Depth is never shaded; it comes from overlapping flat tints of the same hue, like cut paper.\n\nScale is bimodal. Giant expanded-black numerals and display type jump straight to small uppercase caption labels, with few middle sizes. Mistakes and cues are drawn in the manual's own marks (an ink disc with a drawn cross, a ringed tick), not coloured badges. Primary buttons are the one deliberate departure from flatness: liquid glass over the blue.",
+    "keyCharacteristics": [
+      "One hue (264) at several lightnesses; white is the only other colour.",
+      "Expanded-black numerals against tiny wide-tracked captions.",
+      "Flat tints for depth; no soft shadows, no gradients except the glass highlight.",
+      "Pill controls, large rounded panels, thin white line drawings.",
+      "Motion is short and eased; all of it has a reduced-motion off switch."
+    ],
+    "rules": [
+      { "name": "The One Flood Rule", "body": "The page background is always flood (or flood-deep for an inset). No second hue is introduced; if a new emphasis is needed, use a different lightness of the same blue or invert to white.", "section": "colors" },
+      { "name": "The Flat Tint Rule", "body": "Layering is shown by stepping flood, flood-mid, flood-light, flood-deep. Never by blur, drop shadow or opacity haze.", "section": "colors" },
+      { "name": "The No Middle Sizes Rule", "body": "Numerals and display type are huge; everything else is body or label. Do not invent a decorative mid-size tier. Secondary numerals stay in the display style at about 0.6x (the how-it-works numbers).", "section": "typography" },
+      { "name": "The Glass Is Singular Rule", "body": "Liquid glass is for primary buttons only. Everything else is flat.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep every page on flood, with white type and line art.",
+      "Do build depth from stacked flat blue tints.",
+      "Do pair huge expanded-black numerals with small uppercase wdth-88 labels.",
+      "Do draw status marks (cross, tick, dashed placeholder) in the manual's line language.",
+      "Do keep a white-and-ink focus halo on every interactive element.",
+      "Do label placeholder media with a dashed pill and gate all motion on prefers-reduced-motion."
+    ],
+    "donts": [
+      "Don't add a second hue or a dark gym hero with a neon accent.",
+      "Don't use soft shadows, blur-glow or gradient fills on surfaces; the glass highlight is the only gradient.",
+      "Don't use glass for anything but primary buttons.",
+      "Don't introduce a second typeface or mid-size decorative type tier.",
+      "Don't use stock athlete photography."
+    ]
+  }
+}

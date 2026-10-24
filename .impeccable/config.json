@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-24T19:00:52.651Z",
+        "reason": "controller: browser-measured sizes 100/60/32/18px (min step 1.67x) after hierarchy fix 126c1a4; detector reads clamp()/cqi statically"
+      }
+    ]
+  }
+}
