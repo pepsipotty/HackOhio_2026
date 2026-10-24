@@ -3,6 +3,7 @@
 import { Object3D, Quaternion, Vector3 } from 'three'
 import { JOINT_NAMES, JOINT_PARENT, type JointName } from '../data/joints'
 import type { Rig } from './rig'
+import { createSeatedSupport } from './seated-support'
 
 export const HUMANOID_BONES: Record<JointName, string> = {
   pelvis: 'mixamorig1Hips', spine: 'mixamorig1Spine', chest: 'mixamorig1Spine2',
@@ -69,7 +70,9 @@ export function adaptHumanoid(asset: Object3D): Rig {
   const ordered: Array<[Object3D, JointName]> = []
   asset.traverse(bone => { const name = byBone.get(bone); if (name) ordered.push([bone, name]) })
   const position = new Vector3(), rotation = new Quaternion(), parentRotation = new Quaternion()
+  const supportFeet = createSeatedSupport(root, joints, rest)
   const update = () => {
+    supportFeet()
     controls.updateWorldMatrix(true, true)
     for (const [bone, name] of ordered) {
       bone.parent!.updateWorldMatrix(true, false)

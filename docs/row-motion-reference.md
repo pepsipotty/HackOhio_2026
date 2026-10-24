@@ -16,3 +16,14 @@ simulator. Rep One uses authored joint poses plus palm contact solving. The gym
 uses the same rhythm to drive its compliant cable target; its existing physical
 solver determines the actual handle movement, and the mannequin follows it.
 The cadence control continues to scale the simulator speed.
+
+## Hip-hinge correction
+
+The original spine-only lean did not reproduce the reference's hip movement.
+The reach now rotates the pelvis 24 degrees forward around the midpoint of the
+hip joints; the contracted pose returns to an 8-degree rearward angle. These
+are visual approximations of the clip. Hip counter-rotation and two-bone leg
+support preserve both ankle positions and orientations on the footplates.
+The spine stays nearly neutral, and the neck counter-rotates to keep the gaze
+forward. A regression test sweeps the full rep in native gym coordinates and
+checks foot drift below 1 mm, including repeated rig updates.

@@ -17,7 +17,7 @@ export function createCableRowComposite(rig: Rig, apparatus = new CableStackAppa
   const station = apparatus.stations.westSeatedRow
   const restingHandle = new Vector3().copy(station.physics.p)
   const sync = () => {
-    rig.root.position.y = .09 * Math.max(0, Math.min(1, (1 - rig.joints.pelvis.position.y) / .48))
+    rig.root.position.y = .09 * Math.max(0, Math.min(1, (1 - rig.joints.pelvis.position.y) / .3))
     rig.update?.()
     root.updateWorldMatrix(true, true)
     rig.joints.wrist_L.getWorldPosition(left)

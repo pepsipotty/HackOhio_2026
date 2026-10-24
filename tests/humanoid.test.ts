@@ -83,3 +83,34 @@ test('row grip aligns both palms to the real attachment and restores authored po
     expect(rig.joints.shoulder_L.quaternion.angleTo(before)).toBeLessThan(1e-6)
   }
 })
+
+test('pelvis hinges through the row while both feet remain fixed on the footplates', async () => {
+  const { samplePose } = await import('../src/lib/tween')
+  const rig = await humanoid(), motion = (await getMotion('seated-cable-row'))!
+  // Exercise the native gym orientation as well as the model's own coordinates.
+  rig.root.position.set(-1.85, .09, 0)
+  rig.root.rotation.y = Math.PI / 2
+  const feet: { position: Vector3; rotation: Quaternion }[] = []
+  const hips: number[] = [], chests: number[] = []
+  for (let frame = 0; frame <= 40; frame++) {
+    const pose = samplePose(motion.rep!.keys, frame / 40, true)
+    for (const name of JOINT_NAMES) {
+      const a = pose.joints[name] ?? [0, 0, 0]
+      rig.joints[name].quaternion.copy(rig.rest[name]).multiply(new Quaternion().setFromEuler(new Euler(...a.map(v => v * Math.PI / 180) as [number, number, number])))
+    }
+    rig.joints.pelvis.position.set(...pose.root!.position)
+    rig.update!()
+    for (let repeat = 0; repeat < 3; repeat++) rig.update!()
+    hips.push(pose.joints.pelvis![0])
+    chests.push(rig.joints.chest.getWorldPosition(new Vector3()).x)
+    for (const [index, side] of (['L', 'R'] as const).entries()) {
+      const ankle = rig.root.getObjectByName(HUMANOID_BONES[`ankle_${side}`])!
+      const position = ankle.getWorldPosition(new Vector3()), rotation = ankle.getWorldQuaternion(new Quaternion())
+      if (!frame) feet.push({position, rotation})
+      expect(position.distanceTo(feet[index].position)).toBeLessThan(.001)
+      expect(rotation.angleTo(feet[index].rotation)).toBeLessThan(.001)
+    }
+  }
+  expect(Math.max(...hips) - Math.min(...hips)).toBeGreaterThan(25)
+  expect(Math.max(...chests) - Math.min(...chests)).toBeGreaterThan(.12)
+})

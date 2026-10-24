@@ -8,12 +8,13 @@ const STANDING: Vec3 = [0.55, 1.0, 0] // beside the bench, so the legs don't pas
 const SEATED: Vec3 = [0, 0.52, 0]
 
 // Left and right sides mirror each other; only X rotations are used.
-function pose(root: Vec3, spine: number, chest: number, hip: number, knee: number, shoulder: number, elbow: number): Pose {
+function pose(root: Vec3, spine: number, chest: number, hip: number, knee: number, shoulder: number, elbow: number, hinge = 0): Pose {
   return {
     root: { position: root },
     joints: {
+      pelvis: [hinge, 0, 0], neck: [-hinge * .65, 0, 0],
       spine: [spine, 0, 0], chest: [chest, 0, 0],
-      hip_L: [hip, 0, 0], hip_R: [hip, 0, 0],
+      hip_L: [hip + hinge, 0, 0], hip_R: [hip + hinge, 0, 0],
       knee_L: [knee, 0, 0], knee_R: [knee, 0, 0],
       shoulder_L: [shoulder, 0, 0], shoulder_R: [shoulder, 0, 0],
       elbow_L: [elbow, 0, 0], elbow_R: [elbow, 0, 0],
@@ -21,9 +22,9 @@ function pose(root: Vec3, spine: number, chest: number, hip: number, knee: numbe
   }
 }
 
-const SPINE_POSITION = pose(SEATED, 10, 2, 85, 25, 72, 5)
-const THE_PULL = pose(SEATED, -6, -2, 85, 25, -5, 100)
-const THE_SQUEEZE = pose(SEATED, -8, -2, 85, 25, -8, 104)
+const SPINE_POSITION = pose(SEATED, 0, 2, 85, 25, 90, 5, 24)
+const THE_PULL = pose(SEATED, 0, -2, 85, 25, -5, 100, -6)
+const THE_SQUEEZE = pose(SEATED, 0, -2, 85, 25, -8, 104, -8)
 
 const TARGET: Vec3 = [0, 0.8, 0]
 const cam = (view: View, position: Vec3): CameraPreset => ({ view, position, target: TARGET, fov: 40 })
@@ -71,8 +72,8 @@ const motion: ExerciseMotion = {
       mistake: 'Rounding your back to reach the handle instead of hinging at the hips.',
       cues: ['Palms face each other', 'Arms long, shoulders relaxed'],
       camera: 'top',
-      // hip stays at 85: the pelvis is fixed, so extra hip flexion would lift the feet off the platform
-      pose: pose(SEATED, 22, 8, 85, 25, 75, 0),
+      // The pelvis leads the reach; hip counter-rotation and foot support keep the feet planted.
+      pose: pose(SEATED, 0, 4, 85, 25, 75, 0, 30),
       duration: 1100,
       easing: 'easeInOut',
     },
