@@ -150,8 +150,9 @@ body { position: relative; overflow-x: clip; }
 }
 .cta__title {
   /* Display size, capped so "catalogue" always fits the column */
-  font-size: min(clamp(64px, 10vw, 168px), 15.6cqi);
-  margin: var(--s5) 0 var(--s6);
+  font-size: min(clamp(64px, 10vw, 168px), 18.8cqi);
+  font-stretch: 100%; /* wdth 100 so "catalogue" fits cols 8–12 at near-true Display size */
+  margin: 0 0 var(--s6);
 }
 .cta .t-body { margin-bottom: var(--s7); }
 
@@ -178,7 +179,8 @@ body { position: relative; overflow-x: clip; }
   padding-top: var(--s5);
   border-top: var(--rule);
 }
-.how__num { grid-row: 1 / span 2; }
+/* About 0.6× the hero title, so "See catalogue" stays the largest type */
+.how__num { grid-row: 1 / span 2; font-size: clamp(40px, 4.2vw, 64px); }
 .how__step .t-label { align-self: end; padding-bottom: var(--s1); }
 .how__step h3 { margin: 0; align-self: end; text-wrap: balance; }
 .how__step .t-body { grid-column: 1 / -1; margin-top: var(--s5); color: var(--paper-soft); }
