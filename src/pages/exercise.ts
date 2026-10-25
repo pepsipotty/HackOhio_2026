@@ -5,7 +5,7 @@ import { clampStep, stepForKey } from '../lib/steps'
 import type { Exercise } from '../data/exercises'
 import { getMotion, type ExerciseMotion, type View } from '../data/motion'
 import type { Viewer } from '../viewer/viewer'
-import { MUSCLE_NAMES } from '../data/muscles'
+import { FOCUS_COLORS, MUSCLE_NAMES, MUSCLE_TIER_COLORS } from '../data/muscles'
 
 applyGlassSupport()
 
@@ -44,10 +44,14 @@ function built(e: Exercise, motion: ExerciseMotion): void {
   const camSwitch = $('.cam-switch', root)
   const camButtons = [...camSwitch.querySelectorAll<HTMLButtonElement>('[data-cam]')]
   const badge = $('.badge', root)
+  const legend = $('.muscle-legend', root)
+  for (const sw of legend.querySelectorAll<HTMLElement>('[data-tier]')) {
+    const colors: Record<string, string> = { ...MUSCLE_TIER_COLORS, ...FOCUS_COLORS }
+    sw.style.setProperty('--swatch', colors[sw.dataset.tier!])
+  }
   const playback = $('.playback', root)
   const playBtn = $<HTMLButtonElement>('.playback button', root)
   const scrub = $<HTMLInputElement>('.scrub', root)
-  const nowWrap = $('.step-row-wrap', root)
   if (!motion.rep) $('.playback__label', root).textContent = 'Placeholder motion'
   const row = $<HTMLOListElement>('.step-row', root)
   const panel = $('#step-panel', root)
@@ -73,8 +77,13 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     return b
   })
 
+  const names = (ids: string[] = []) => ids.map((id) => MUSCLE_NAMES[id] ?? id).join(', ')
+  const worked = motion.muscles
+    ? `. Highlighted muscles: ${names(motion.muscles.primary)}` +
+      (motion.muscles.secondary?.length ? `; assisting: ${names(motion.muscles.secondary)}` : '')
+    : ''
   const labelCanvas = () => {
-    canvas.setAttribute('aria-label', `3D model of the ${e.name}, step ${cur + 1} of ${n}: ${steps[cur].title}, ${view} view`)
+    canvas.setAttribute('aria-label', `3D model of the ${e.name}, step ${cur + 1} of ${n}: ${steps[cur].title}, ${view} view${worked}`)
   }
 
   function swapNumeral(text: string): void {
@@ -127,7 +136,6 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     setView(s.camera)
     viewer?.goTo(cur)
     onPlayback(0, false)
-    delete nowWrap.dataset.now
   }
 
   function setView(v: View): void {
@@ -139,8 +147,6 @@ function built(e: Exercise, motion: ExerciseMotion): void {
   function onPlayback(t: number, playing: boolean): void {
     scrub.value = String(Math.round(t * 1000))
     playBtn.setAttribute('aria-pressed', String(playing))
-    nowWrap.style.setProperty('--t', String(t))
-    nowWrap.dataset.now = ''
   }
 
   for (const b of camButtons) {
@@ -159,7 +165,7 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     msg.hidden = false
     msg.dataset.kind = 'off'
     canvas.hidden = true
-    camSwitch.hidden = playback.hidden = badge.hidden = true
+    camSwitch.hidden = playback.hidden = badge.hidden = legend.hidden = true
     const p = $('.viewport-msg__text', msg)
     p.className = 'viewport-msg__text t-body'
     p.textContent = text
@@ -180,21 +186,9 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     viewer.goTo(cur)
     // a restored page may have been left mid-playback; the new viewer starts stopped at t=0
     onPlayback(0, false)
-    delete nowWrap.dataset.now
     camSwitch.hidden = playback.hidden = false
     badge.hidden = !viewer.placeholder
-    const muscleTools = $('.muscle-tools', root)
-    muscleTools.hidden = viewer.muscleGroups.length === 0
-    const muscleSelect = $<HTMLSelectElement>('#muscle-group', root)
-    muscleSelect.replaceChildren(...viewer.muscleGroups.map(id => new Option(MUSCLE_NAMES[id] ?? id, id)))
-    $<HTMLButtonElement>('[data-muscle-toggle]', root).onclick = () => viewer?.toggleMuscle(muscleSelect.value)
-    $<HTMLButtonElement>('[data-muscle-clear]', root).onclick = () => viewer?.clearMuscles()
-    viewer.onMusclesChange(groups => {
-      $('[data-muscle-status]', root).textContent = groups.length
-        ? `Highlighted: ${groups.map(id => MUSCLE_NAMES[id] ?? id).join(', ')}`
-        : 'Click a muscle on the model, or choose a group below.'
-      $<HTMLButtonElement>('[data-muscle-clear]', root).disabled = groups.length === 0
-    })
+    legend.hidden = !motion.muscles || viewer.placeholder
     // hide on a timer: Animation.finished never settles while the page produces no frames (hidden/occluded window)
     if (!reduced) msg.animate({ opacity: [1, 0] }, { duration: 320, easing: 'ease-out', fill: 'forwards' })
     setTimeout(() => {

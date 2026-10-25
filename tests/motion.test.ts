@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { Euler, MeshBasicMaterial, Quaternion, Vector3 } from 'three'
-import { getMotion } from '../src/data/motion'
+import { FOCUS_PARTS, getMotion } from '../src/data/motion'
 import { JOINT_NAMES, type JointName } from '../src/data/joints'
 import { buildMannequin } from '../src/viewer/rig'
 
@@ -21,6 +21,11 @@ describe('seated cable row motion', () => {
       expect(s.instruction).not.toBe('')
       expect(s.mistake).not.toBe('')
       expect(s.cues.length).toBeGreaterThan(0)
+      // every step points at what it changes
+      expect(s.focus?.parts.length, s.id).toBeGreaterThan(0)
+      for (const p of s.focus!.parts) expect(FOCUS_PARTS).toContain(p)
+      expect(s.focus!.duration, s.id).toBeGreaterThan(0)
+      for (const j of Object.keys(s.focus!.from?.joints ?? {})) expect(JOINT_NAMES).toContain(j)
     }
   })
 

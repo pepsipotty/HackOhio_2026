@@ -10,6 +10,19 @@ export interface CameraPreset { view: View; position: Vec3; target: Vec3; fov: n
 
 export type Easing = 'easeInOut' | 'easeOut' | 'linear'
 
+// What a step is about. Body parts are tinted on the humanoid; the rest are parts of the row station.
+export const FOCUS_PARTS = ['hands', 'feet', 'arms', 'shoulder-blades', 'spine', 'weight-pin', 'handle', 'footplates'] as const
+export type FocusPart = (typeof FOCUS_PARTS)[number]
+export interface StepFocus {
+  parts: FocusPart[]
+  /** Where the demonstration starts; defaults to the previous step's pose. */
+  from?: Pose
+  /** How long the parts flash red while moving into place (ms), before turning green. */
+  duration: number
+  /** Fade the body so the spine shows through. */
+  xray?: boolean
+}
+
 export interface Step {
   id: string
   title: string
@@ -20,12 +33,17 @@ export interface Step {
   pose: Pose
   duration: number // ms
   easing: Easing
+  focus?: StepFocus
 }
+
+// Muscle-group ids from src/data/muscles.ts, painted on the humanoid while the exercise is shown.
+export interface MuscleTargets { primary: string[]; secondary?: string[] }
 
 export interface ExerciseMotion {
   exerciseId: string
   cameras: Record<View, CameraPreset>
   steps: Step[]
+  muscles?: MuscleTargets
   rep?: { duration: number; keys: { t: number; pose: Pose }[] } // t in [0,1]
 }
 

@@ -105,6 +105,12 @@
 
           <div class="viewport-foot">
             <p class="badge t-label" hidden>Placeholder model — final model coming soon</p>
+            <ul class="muscle-legend t-label" aria-label="Highlight colour key" hidden>
+              <li><span class="muscle-legend__swatch" data-tier="primary" aria-hidden="true"></span>Main muscles</li>
+              <li><span class="muscle-legend__swatch" data-tier="secondary" aria-hidden="true"></span>Assisting</li>
+              <li><span class="muscle-legend__swatch" data-tier="changing" aria-hidden="true"></span>Adjusting</li>
+              <li><span class="muscle-legend__swatch" data-tier="set" aria-hidden="true"></span>In position</li>
+            </ul>
             <div class="playback" hidden>
               <button class="glass glass--icon" type="button" aria-pressed="false" aria-label="Play full rep">
                 <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
@@ -118,22 +124,10 @@
 
         <div class="panel">
           <h1 class="t-h1 panel__name"></h1>
-          <p class="t-label coach-note">Draft — to be reviewed by a qualified coach before public release.</p>
-          <details class="muscle-tools" hidden>
-            <summary>Explore muscle groups</summary>
-            <p data-muscle-status role="status">Click a muscle on the model, or choose a group below.</p>
-            <label for="muscle-group">Muscle group</label>
-            <select id="muscle-group"></select>
-            <div class="muscle-tools__actions">
-              <button class="chip" type="button" data-muscle-toggle>Toggle highlight</button>
-              <button class="chip" type="button" data-muscle-clear disabled>Clear highlights</button>
-            </div>
-          </details>
 
           <div class="stepbar">
             <div class="step-row-wrap">
               <ol class="step-row" role="tablist" aria-label="Steps"></ol>
-              <span class="now-bar" aria-hidden="true"></span>
             </div>
             <div class="step-nav">
               <button class="btn-outline" type="button" data-prev>Previous</button>

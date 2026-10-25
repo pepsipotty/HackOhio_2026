@@ -25,13 +25,13 @@ main { padding-block: var(--s2) var(--s9); }
 .ex { align-items: start; }
 
 .viewport {
-  --mq-fill: var(--flood-deep);
+  --mq-fill: var(--stage);
   grid-column: 1 / span 7;
   position: sticky;
   top: var(--s5);
   min-height: calc(100svh - 120px);
   border-radius: var(--r-panel);
-  background: var(--flood-deep);
+  background: var(--stage);
   overflow: hidden;
   isolation: isolate;
   view-transition-name: exercise-hero;
@@ -49,7 +49,7 @@ main { padding-block: var(--s2) var(--s9); }
   gap: var(--s5);
   padding: var(--s7) var(--s6);
   text-align: center;
-  background: var(--flood-deep);
+  background: var(--stage);
 }
 .viewport-msg .mannequin { width: min(100%, 440px); }
 .viewport-msg__text.t-body { max-width: 36ch; }
@@ -97,6 +97,22 @@ main { padding-block: var(--s2) var(--s9); }
   background: var(--flood-deep);
   color: var(--paper-soft);
 }
+/* Key for the muscle highlight colours; same pill language as the badge, solid like the playback bar */
+.muscle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s4);
+  margin: 0;
+  padding: var(--s1) var(--s3);
+  border-radius: var(--r-pill);
+  background: var(--flood-deep);
+  color: var(--paper-soft);
+  font-size: 11px;
+  list-style: none;
+}
+.muscle-legend li { display: flex; align-items: center; gap: var(--s2); }
+.muscle-legend__swatch { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--swatch); }
+.muscle-legend__swatch[data-tier='primary'] { box-shadow: 0 0 6px var(--swatch); }
 .playback {
   align-self: stretch;
   display: flex;
@@ -129,7 +145,6 @@ main { padding-block: var(--s2) var(--s9); }
 
 /* ---------- Step panel ---------- */
 .panel { grid-column: 8 / span 5; display: flex; flex-direction: column; padding-top: var(--s5); }
-.coach-note { margin-top: var(--s4); color: var(--paper-soft); }
 
 /* Desktop: row above the step, buttons below it. Under 1024px the wrapper becomes the sticky bottom bar. */
 .stepbar { display: contents; }
@@ -177,19 +192,6 @@ main { padding-block: var(--s2) var(--s9); }
 .key:hover { border-color: var(--paper); color: var(--paper); }
 .key.is-visited { border-color: var(--paper); color: var(--paper); }
 .key[aria-selected='true'] { border-color: var(--paper); background: var(--paper); color: var(--ink); }
-
-.now-bar {
-  position: absolute;
-  bottom: 0;
-  left: calc(var(--t, 0) * (100% - 56px));
-  width: 56px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--paper);
-  opacity: 0;
-  transition: opacity 200ms var(--ease);
-}
-.step-row-wrap[data-now] .now-bar { opacity: 1; }
 
 .step__head { display: flex; align-items: flex-end; gap: var(--s5); }
 /* the giant numeral carries its own "of 7" caption; the title stands alone beside it */
@@ -299,7 +301,6 @@ main { padding-block: var(--s2) var(--s9); }
   }
   .step-row-wrap { margin-top: 0; padding-bottom: var(--s3); }
   .step-row li { flex-basis: 44px; }
-  .now-bar { left: calc(var(--t, 0) * (100% - 44px)); width: 44px; }
   .key { background: var(--flood-deep); }
   .step-nav { margin-top: var(--s2); }
   .step-nav .glass, .btn-outline { padding: 14px 18px; }
@@ -319,15 +320,6 @@ main { padding-block: var(--s2) var(--s9); }
 
 @media (prefers-reduced-motion: reduce) {
   .viewport-msg[data-kind='loading'] .mannequin { animation: none; }
-  .chip, .key, .now-bar, .btn-outline { transition: none; }
+  .chip, .key, .btn-outline { transition: none; }
 }
 
-/* Muscle exploration shares the exercise page's controls and colour tokens. */
-.muscle-tools { margin-top: var(--s5); padding: var(--s4); border: 1px solid var(--paper-soft); border-radius: var(--r-card); }
-.muscle-tools summary { cursor: pointer; font-weight: 700; }
-.muscle-tools p { margin-block: var(--s3); font-size: 14px; line-height: 1.5; }
-.muscle-tools label { display: block; margin-bottom: var(--s2); font-size: 14px; }
-.muscle-tools select { width: 100%; min-height: 42px; padding: var(--s2) var(--s3); color: var(--paper); background: var(--flood-deep); border: 1px solid var(--paper); border-radius: 6px; font: inherit; }
-.muscle-tools__actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
-.muscle-tools .chip { min-height: 40px; font-size: 13px; }
-.muscle-tools .chip:disabled { opacity: .5; cursor: default; }

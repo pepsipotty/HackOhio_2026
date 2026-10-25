@@ -9,6 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createCableRowComposite } from './cable-row-composite'
 import { JOINT_NAMES, loadRig } from './rig'
 import { createMuscleInteraction } from './muscle-interaction'
+import { createStepFocus } from './step-focus'
 import { MODEL_URL } from '../data/media'
 import { Tween, samplePose } from '../lib/tween'
 import type { CameraPreset, Easing, ExerciseMotion, Pose, View } from '../data/motion'
@@ -20,10 +21,6 @@ export interface Viewer {
   pause(): void
   seek(t: number): void
   readonly placeholder: boolean
-  readonly muscleGroups: string[]
-  toggleMuscle(id: string): void
-  clearMuscles(): void
-  onMusclesChange(callback: (groups: string[]) => void): void
   dispose(): void
 }
 
@@ -46,7 +43,7 @@ export async function createViewer(
 ): Promise<Viewer> {
   const paper = tokenColor('--paper')
   const shade = tokenColor('--flood-light')
-  const mid = tokenColor('--flood-mid')
+  const gridColor = tokenColor('--flood-mid')
 
   const renderer = new WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
@@ -70,7 +67,7 @@ export async function createViewer(
   composite.root.rotation.y = -Math.PI / 2
   composite.root.position.z = 1.85
   scene.add(composite.root)
-  scene.add(new GridHelper(10, 20, mid, mid))
+  scene.add(new GridHelper(10, 20, gridColor, gridColor))
   const pelvis = rig.joints.pelvis
 
   const euler = new Euler()
@@ -89,6 +86,8 @@ export async function createViewer(
   // Pose tween: 0→1, slerping each joint from wherever it is now, so a retarget never snaps.
   type PoseAnim = { tween: Tween; fromQ: Quaternion[]; toQ: Quaternion[]; fromP: Vector3; toP: Vector3 }
   let poseAnim: PoseAnim | null = null
+  // Tweens to run after the current one, e.g. a step's demonstration: ease to its start, then move.
+  let poseQueue: { pose: Pose; duration: number; easing: Easing }[] = []
   const startPose = (pose: Pose, duration: number, easing: Easing, now: number) => {
     composite.restorePose()
     poseAnim = {
@@ -105,7 +104,10 @@ export async function createViewer(
     const [u] = tween.value(now)
     JOINT_NAMES.forEach((j, k) => rig.joints[j].quaternion.slerpQuaternions(fromQ[k], toQ[k], u))
     pelvis.position.lerpVectors(fromP, toP, u)
-    if (tween.done(now)) poseAnim = null
+    if (!tween.done(now)) return
+    poseAnim = null
+    const next = poseQueue.shift()
+    if (next) startPose(next.pose, next.duration, next.easing, now)
   }
 
   const controls = new OrbitControls(camera, renderer.domElement)
@@ -149,6 +151,8 @@ export async function createViewer(
   }
   let playing = false
   let t = 0
+  let stepFocus: ReturnType<typeof createStepFocus> | null = null
+  let focusSetAt = 0 // when the current step's focus turns from flashing red to steady green
 
   let raf = 0
   let last = 0
@@ -179,6 +183,8 @@ export async function createViewer(
     }
     busy = controls.update() || busy
     composite.sync()
+    if (stepFocus?.phase === 'changing' && now >= focusSetAt) stepFocus.setPhase('set', now)
+    busy = (stepFocus?.tick(now) ?? false) || busy
     renderer.render(scene, camera)
     if (busy) request()
     else last = 0
@@ -215,15 +221,19 @@ export async function createViewer(
   applyPose(motion.steps[0].pose)
   request()
 
-  const muscleInteraction = createMuscleInteraction(rig.root, camera, renderer.domElement, request)
+  // The exercise's worked muscles stay painted on the model; there is no click-to-toggle here.
+  const muscleInteraction = createMuscleInteraction(rig.root, camera, renderer.domElement, request, {
+    targets: motion.muscles, interactive: false,
+  })
+  // After the muscle materials are cloned, so the focus tint is compiled into the final materials.
+  stepFocus = createStepFocus(rig, composite.apparatus, scene)
+  const differs = (pose: Pose) =>
+    targetsOf(pose).some((q, k) => q.angleTo(rig.joints[JOINT_NAMES[k]].quaternion) > 0.02) ||
+    (!!pose.root && pelvis.position.distanceTo(new Vector3(...pose.root.position)) > 0.01)
 
   const ms = (d: number) => (opts.reducedMotion ? 0 : d)
   return {
     placeholder: rig.placeholder,
-    muscleGroups: muscleInteraction.groups,
-    toggleMuscle: muscleInteraction.toggle,
-    clearMuscles: muscleInteraction.clear,
-    onMusclesChange: muscleInteraction.subscribe,
     goTo(i) {
       const s = motion.steps[i]
       if (!s) return
@@ -231,7 +241,21 @@ export async function createViewer(
       t = 0
       const now = performance.now()
       startCam(s.camera, ms(s.duration), s.easing, now)
-      startPose(s.pose, ms(s.duration), s.easing, now)
+      poseQueue = []
+      const focus = s.focus
+      if (focus && !opts.reducedMotion) {
+        // Demonstrate the change: ease to where it starts, then move into place while the part flashes red.
+        const from = focus.from ?? motion.steps[i - 1]?.pose ?? s.pose
+        const prep = differs(from) ? 500 : 0
+        startPose(from, prep, 'easeInOut', now)
+        poseQueue.push({ pose: s.pose, duration: focus.duration, easing: 'easeInOut' })
+        focusSetAt = now + prep + focus.duration
+        stepFocus?.set(focus, 'changing', now)
+      } else {
+        startPose(s.pose, ms(s.duration), s.easing, now)
+        focusSetAt = now
+        stepFocus?.set(focus ?? null, 'set', now)
+      }
       request()
     },
     setCamera(view) {
@@ -241,7 +265,10 @@ export async function createViewer(
     play() {
       if (playing) return
       // ease into the rep's current frame instead of snapping to it
-      startPose(samplePose(rep.keys, t, true), ms(400), 'easeOut', performance.now())
+      const now = performance.now()
+      poseQueue = []
+      stepFocus?.set(null, 'set', now)
+      startPose(samplePose(rep.keys, t, true), ms(400), 'easeOut', now)
       playing = true
       request()
     },
@@ -252,6 +279,8 @@ export async function createViewer(
     seek(v) {
       playing = false
       poseAnim = null
+      poseQueue = []
+      stepFocus?.set(null, 'set', performance.now())
       t = Math.min(Math.max(v, 0), 1)
       applyPose(samplePose(rep.keys, t, true))
       opts.onPlayback(t, false)
@@ -264,6 +293,7 @@ export async function createViewer(
       document.removeEventListener('visibilitychange', onVisibility)
       controls.dispose()
       muscleInteraction.dispose()
+      stepFocus?.dispose()
       scene.traverse((o) => {
         const m = o as Mesh
         m.geometry?.dispose()
