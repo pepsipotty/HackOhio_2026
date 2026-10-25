@@ -18,21 +18,29 @@ export function createRowGrip(rig: Rig) {
     const bone = rig.root.getObjectByName(HUMANOID_BONES[`wrist_${side}`])
     return bone ? wrist.getWorldQuaternion(new Quaternion()).invert().multiply(bone.getWorldQuaternion(new Quaternion())) : new Quaternion()
   })
-  const fingers: {bone: Object3D; rest: Quaternion; angle: number}[] = []
+  const fingers: {bone: Object3D; rest: Quaternion; angle: number; side: 0 | 1}[] = []
   rig.root.traverse(bone => {
     const match = bone.name.match(/Hand(Thumb|Index|Middle|Ring|Pinky)([123])$/)
-    if (match) fingers.push({bone, rest: bone.quaternion.clone(), angle: (match[1] === 'Thumb' ? [.38, .6, .55] : [.95, 1.35, .8])[Number(match[2]) - 1]})
+    if (match) fingers.push({bone, rest: bone.quaternion.clone(), side: bone.name.includes('Left') ? 0 : 1, angle: (match[1] === 'Thumb' ? [.38, .6, .55] : [.95, 1.35, .8])[Number(match[2]) - 1]})
   })
   const saved = new Map<Object3D, Quaternion>()
   const restore = () => { for (const [joint, rotation] of saved) joint.quaternion.copy(rotation); saved.clear() }
-  const curl = (amount: number) => {
-    for (const {bone, rest, angle} of fingers) bone.quaternion.copy(rest).multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), angle * amount))
+  /** Close the fingers; a pair sets each hand on its own. */
+  const curl = (amount: number | readonly [number, number]) => {
+    for (const {bone, rest, angle, side} of fingers) {
+      const a = typeof amount === 'number' ? amount : amount[side]
+      bone.quaternion.copy(rest).multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), angle * a))
+    }
   }
-  const solve = (handle: Object3D, amount = 1) => {
-    if (amount <= 0) { curl(0); return }
+  /** Reach both hands onto the handle; hands weights each hand (e.g. the left takes hold before the right). */
+  const solve = (handle: Object3D, amount = 1, hands: readonly [number, number] = [1, 1]) => {
+    const weights = [amount * hands[0], amount * hands[1]] as const
+    if (weights[0] <= 0 && weights[1] <= 0) { curl(0); return }
     rig.root.updateWorldMatrix(true, true)
     handle.updateWorldMatrix(true, true)
     sides.forEach((side, index) => {
+      const amount = weights[index]
+      if (amount <= 0) return
       const wrist = rig.joints[`wrist_${side}`]
       // Attachment grip cylinder centers, in the actual row-handle mesh's local frame.
       const grip = handle.localToWorld(new Vector3(side === 'L' ? .082 : -.082, -.11, .04))
@@ -63,7 +71,7 @@ export function createRowGrip(rig: Rig) {
       }
     })
     rig.update?.()
-    curl(amount)
+    curl(weights)
     rig.root.updateWorldMatrix(true, true)
   }
   return { solve, restore, curl }

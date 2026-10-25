@@ -1,45 +1,33 @@
 import { Euler, Object3D, Quaternion, Vector3 } from 'three'
 import type { JointName } from '../data/joints'
+import type { FootTarget } from '../data/motion'
+import { SEAT_LIFT, footplateTarget } from '../data/row-station'
 
-// The west-row lower footplates (CableStackApparatus: centre x -1.03, y .27, ±.18 apart, 18 mm thick, tilted -0.42 rad
-// about Z) in the humanoid root's frame. The composite seats the humanoid at world (-1.85, .09, 0) facing +X, so
-// local z = worldX + 1.85 and local y = worldY - .09. Only the forward/up (z, y) plane matters; the plates are wider than a foot.
-const PLATE_TILT = 0.42
-const PLATE_CENTRE = { z: -1.03 + 1.85, y: 0.27 - 0.09 }
-const PLATE_HALF_THICKNESS = 0.009
-const PLATE_NORMAL = { z: -Math.cos(PLATE_TILT), y: Math.sin(PLATE_TILT) } // out of the plate, toward the seat
-const PLATE_UP = { z: Math.sin(PLATE_TILT), y: Math.cos(PLATE_TILT) } // along the plate, toward its top edge
-// Measured on human.glb at rest: the ankle bone sits 95 mm above the sole and 58 mm ahead of the heel.
-const ANKLE_ABOVE_SOLE = 0.095 + 0.001 // hairline gap so the sole never z-fights the studded plate
-const ANKLE_AHEAD_OF_HEEL = 0.058
-const HEEL_ALONG_PLATE = -0.125 // heel near the plate's lower edge (plate half-length .14), toes stay on the plate
-// Below this pelvis height the figure is seated and the feet belong on the plates; blend in over the sit-down.
+// Below this pelvis height the figure is seated and, unless told otherwise, the feet belong on the plates.
 const SEATED_START = 0.7
 const SEATED_FULL = 0.56
+const DEG = Math.PI / 180
 
-/** Keep the soles flat on the row footplates for every seated pose, including the hip hinge. */
+export type FeetTargets = { L: FootTarget; R: FootTarget }
+
+/**
+ * Two-bone leg IK. Each call reaches the ankles for their targets: explicit ones (walking, stepping over the
+ * bench, lifting the feet onto the plates), or by default the footplates whenever the figure is seated.
+ * Seated, the pelvis also hinges around the hip joints rather than its own origin.
+ */
 export function createSeatedSupport(root: Object3D, joints: Record<JointName, Object3D>, rest: Record<JointName, Quaternion>) {
-  // Rest orientation of each foot relative to the root (standing, sole flat), captured before any pose is applied.
+  // Rest orientation of each foot relative to the root (standing, sole flat), captured with every joint at rest.
   const saved = Object.values(joints).map(joint => ({joint, rotation: joint.quaternion.clone(), position: joint.position.clone()}))
   for (const name of Object.keys(rest) as JointName[]) joints[name].quaternion.copy(rest[name])
   root.updateWorldMatrix(true, true)
   const rootInverse = root.getWorldQuaternion(new Quaternion()).invert()
-  // Pitch the flat foot toes-up until the sole lies in the plate plane.
-  const pitch = new Quaternion().setFromEuler(new Euler(-(Math.PI / 2 - PLATE_TILT), 0, 0))
-  const along = HEEL_ALONG_PLATE + ANKLE_AHEAD_OF_HEEL
-  const anchors = (['L', 'R'] as const).map(side => {
-    const ankle = joints[`ankle_${side}`]
-    const lateral = root.worldToLocal(ankle.getWorldPosition(new Vector3())).x
-    const position = new Vector3(
-      lateral,
-      PLATE_CENTRE.y + PLATE_NORMAL.y * (PLATE_HALF_THICKNESS + ANKLE_ABOVE_SOLE) + PLATE_UP.y * along,
-      PLATE_CENTRE.z + PLATE_NORMAL.z * (PLATE_HALF_THICKNESS + ANKLE_ABOVE_SOLE) + PLATE_UP.z * along,
-    )
-    const rotation = pitch.clone().multiply(rootInverse.clone().multiply(ankle.getWorldQuaternion(new Quaternion())))
-    return { side, position, rotation }
-  })
+  const restFoot = {
+    L: rootInverse.clone().multiply(joints.ankle_L.getWorldQuaternion(new Quaternion())),
+    R: rootInverse.clone().multiply(joints.ankle_R.getWorldQuaternion(new Quaternion())),
+  }
   for (const {joint, rotation, position} of saved) { joint.quaternion.copy(rotation); joint.position.copy(position) }
   root.updateWorldMatrix(true, true)
+  const plates = { L: footplateTarget('L'), R: footplateTarget('R') }
 
   // Rotate around the midpoint of the femoral heads, not the higher pelvis bone origin.
   const hipCenter = joints.hip_L.position.clone().add(joints.hip_R.position).multiplyScalar(.5)
@@ -51,34 +39,46 @@ export function createSeatedSupport(root: Object3D, joints: Record<JointName, Ob
     joint.quaternion.premultiply(delta)
     joint.updateWorldMatrix(true, true)
   }
-  return () => {
+  const euler = new Euler()
+  return (feet?: FeetTargets | null) => {
     if (joints.pelvis.position.distanceToSquared(lastPelvis) > 1e-12) basePelvis.copy(joints.pelvis.position)
     const hinge = joints.pelvis.quaternion.clone().multiply(rest.pelvis.clone().invert())
     const pivot = hipCenter.clone().sub(hipCenter.clone().applyQuaternion(hinge))
     joints.pelvis.position.copy(basePelvis)
+    const seated = Math.min(1, Math.max(0, (SEATED_START - basePelvis.y) / (SEATED_START - SEATED_FULL)))
     if (basePelvis.y < SEATED_START) joints.pelvis.position.add(pivot)
     lastPelvis.copy(joints.pelvis.position)
-    const weight = Math.min(1, Math.max(0, (SEATED_START - joints.pelvis.position.y) / (SEATED_START - SEATED_FULL)))
-    if (weight === 0) return
+    // Default: plates, in the seated frame the composite lifts the figure into.
+    const targets = feet ?? (seated > 0 ? plates : null)
+    if (!targets) return
+    const floor = feet ? root.position.y : SEAT_LIFT // explicit targets are measured from the floor
     root.updateWorldMatrix(true, true)
     const rootRotation = root.getWorldQuaternion(new Quaternion())
-    for (const {side, position, rotation} of anchors) {
+    const forward = new Vector3(0, 0, 1).applyQuaternion(rootRotation)
+    for (const side of ['L', 'R'] as const) {
+      const [x, y, z, pitch, w] = targets[side]
+      const weight = feet ? w : seated
+      if (weight <= 0) continue
       const hip = joints[`hip_${side}`], knee = joints[`knee_${side}`], ankle = joints[`ankle_${side}`]
       const authored = [hip, knee, ankle].map(j => j.quaternion.clone())
       const h = hip.getWorldPosition(new Vector3()), k = knee.getWorldPosition(new Vector3()), a = ankle.getWorldPosition(new Vector3())
-      const target = root.localToWorld(position.clone())
+      const target = root.localToWorld(new Vector3(x, y - floor, z))
       const upper = h.distanceTo(k), lower = k.distanceTo(a)
       const direction = target.clone().sub(h)
       const distance = Math.min(upper + lower - 1e-6, Math.max(Math.abs(upper - lower) + 1e-6, direction.length()))
       direction.normalize()
       const reach = (upper * upper - lower * lower + distance * distance) / (2 * distance)
       const height = Math.sqrt(Math.max(0, upper * upper - reach * reach))
-      const bend = k.clone().sub(h).addScaledVector(direction, -k.clone().sub(h).dot(direction)).normalize()
+      // The posed knee picks the bend plane; a straight leg falls back to bending forward.
+      const bend = k.clone().sub(h).addScaledVector(direction, -k.clone().sub(h).dot(direction))
+      if (bend.lengthSq() < 1e-6) bend.copy(forward).addScaledVector(direction, -forward.dot(direction))
+      bend.normalize()
       const desiredKnee = h.clone().addScaledVector(direction, reach).addScaledVector(bend, height)
       turnToward(hip, k.sub(h), desiredKnee.sub(h))
       const kneePosition = knee.getWorldPosition(new Vector3())
       turnToward(knee, ankle.getWorldPosition(new Vector3()).sub(kneePosition), target.sub(kneePosition))
-      const desired = rootRotation.clone().multiply(rotation)
+      const tilt = new Quaternion().setFromEuler(euler.set(-pitch * DEG, 0, 0))
+      const desired = rootRotation.clone().multiply(tilt).multiply(restFoot[side])
       ankle.quaternion.copy(ankle.parent!.getWorldQuaternion(new Quaternion()).invert().multiply(desired))
       if (weight < 1) [hip, knee, ankle].forEach((j, i) => j.quaternion.slerpQuaternions(authored[i], j.quaternion.clone(), weight))
     }

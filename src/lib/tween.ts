@@ -58,5 +58,9 @@ export function samplePose(keys: { t: number; pose: Pose }[], t: number, smooth 
   const a = lo.pose.root?.position
   const b = hi.pose.root?.position
   const position = a && b ? lerp3(a, b, u) : a ?? b
-  return position ? { root: { position }, joints } : { joints }
+  const pose: Pose = position ? { root: { position }, joints } : { joints }
+  if (lo.pose.scapula !== undefined || hi.pose.scapula !== undefined) {
+    pose.scapula = (lo.pose.scapula ?? 0) + ((hi.pose.scapula ?? 0) - (lo.pose.scapula ?? 0)) * u
+  }
+  return pose
 }

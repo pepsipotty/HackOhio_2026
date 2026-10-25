@@ -168,6 +168,59 @@ test('soles rest on the lower footplates without passing through them in every s
   }
 }, 60000)
 
+test('seated well back: thighs rest along the pad, knees softly bent and over the feet, legs clear of the pad', async () => {
+  const { SkinnedMesh } = await import('three')
+  const { samplePose } = await import('../src/lib/tween')
+  const rig = await humanoid(), motion = (await getMotion('seated-cable-row'))!
+  rig.root.position.set(-1.85, .09, 0)
+  rig.root.rotation.y = Math.PI / 2
+  const meshes: InstanceType<typeof SkinnedMesh>[] = []
+  rig.root.traverse(o => { if (o instanceof SkinnedMesh) meshes.push(o) })
+  // Row bench pad from CableStackApparatus.js: centre (-1.80, .45, 0), 1.02 x .065 x .29 m.
+  const PAD = { x0: -2.31, x1: -1.29, top: .4825, bottom: .4175, half: .145 }
+  const poses = ['spine-position', 'the-squeeze'].map(id => motion.steps.find(s => s.id === id)!.pose)
+  poses.push(samplePose(motion.rep!.keys, .75, true))
+  const v = new Vector3()
+  for (const pose of poses) {
+    for (const name of JOINT_NAMES) {
+      const a = pose.joints[name] ?? [0, 0, 0]
+      rig.joints[name].quaternion.copy(rig.rest[name]).multiply(new Quaternion().setFromEuler(new Euler(...a.map(x => x * Math.PI / 180) as [number, number, number])))
+    }
+    rig.joints.pelvis.position.set(...pose.root!.position)
+    rig.update!()
+    rig.root.updateMatrixWorld(true)
+    const at = (n: typeof JOINT_NAMES[number]) => rig.joints[n].getWorldPosition(new Vector3())
+    const hip = at('hip_L'), knee = at('knee_L'), ankle = at('ankle_L')
+    // Station +X is the figure's forward; station -Z is the figure's left.
+    expect(hip.x - -1.85, 'pelvis well back from the old forward seat').toBeLessThan(0)
+    const flex = knee.clone().sub(hip).angleTo(ankle.clone().sub(knee)) * 180 / Math.PI
+    expect(flex).toBeGreaterThan(30)
+    expect(flex).toBeLessThan(55)
+    expect(-knee.z, 'knee tracks over the foot, not inside it').toBeGreaterThanOrEqual(-ankle.z - .005)
+    // Lowest skin over the pad along the left thigh, in five bins from hip to knee.
+    const bins = Array(5).fill(Infinity)
+    let shins = 0
+    for (const mesh of meshes) {
+      const pos = mesh.geometry.attributes.position
+      for (let i = 0; i < pos.count; i += 2) {
+        mesh.getVertexPosition(i, v).applyMatrix4(mesh.matrixWorld)
+        if (v.x < PAD.x0 || v.x > PAD.x1 || Math.abs(v.z) > PAD.half) continue
+        if (v.x > knee.x - .06 && v.y < PAD.top && v.y > PAD.bottom) shins++
+        if (v.z < 0 && v.y < .7) {
+          const b = Math.floor((v.x - hip.x) / (knee.x - hip.x) * 5)
+          if (b >= 0 && b < 5) bins[b] = Math.min(bins[b], v.y - PAD.top)
+        }
+      }
+    }
+    expect(shins, 'knees and shins pass clear of the pad').toBe(0)
+    // Resting on it: neither sunk in more than soft tissue would give, nor floating, over most of the thigh.
+    for (const gap of bins.slice(0, 4)) {
+      expect(gap).toBeGreaterThan(-.02)
+      expect(gap).toBeLessThan(.015)
+    }
+  }
+}, 60000)
+
 
 test('step focus maps hands, feet and arms onto the real skeleton', async () => {
   const { SkinnedMesh } = await import('three')

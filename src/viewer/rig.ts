@@ -14,6 +14,7 @@ import {
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { JOINT_NAMES, JOINT_PARENT, type JointName } from '../data/joints'
 import { adaptHumanoid, HUMANOID_BONES } from './humanoid'
+import type { FootTarget } from '../data/motion'
 
 export { JOINT_NAMES, type JointName } from '../data/joints'
 
@@ -23,6 +24,10 @@ export interface Rig {
   rest: Record<JointName, Quaternion>
   placeholder: boolean
   update?(): void
+  /** Plant the ankles (null: footplates when seated). Applied on the next update. */
+  setFeet?(feet: { L: FootTarget; R: FootTarget } | null): void
+  /** Shoulder-blade retraction, degrees. Applied on the next update. */
+  setScapula?(degrees: number): void
 }
 
 // Fill when a GLB's bone names differ from JOINT_NAMES, e.g. { pelvis: 'mixamorigHips' }.

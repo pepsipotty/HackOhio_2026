@@ -11,8 +11,9 @@ import { JOINT_NAMES, loadRig } from './rig'
 import { createMuscleInteraction } from './muscle-interaction'
 import { createStepFocus } from './step-focus'
 import { MODEL_URL } from '../data/media'
-import { Tween, samplePose } from '../lib/tween'
-import type { CameraPreset, Easing, ExerciseMotion, Pose, View } from '../data/motion'
+import { EASE, Tween, samplePose } from '../lib/tween'
+import { buildClip, mixPose, type Clip } from '../lib/clip'
+import type { CameraPreset, Easing, ExerciseMotion, Pose, StepFocus, View } from '../data/motion'
 
 export interface Viewer {
   goTo(stepIndex: number): void
@@ -39,7 +40,7 @@ function tokenColor(token: string): Color {
 export async function createViewer(
   host: HTMLElement,
   motion: ExerciseMotion,
-  opts: { reducedMotion: boolean; onPlayback: (t: number, playing: boolean) => void },
+  opts: { reducedMotion: boolean; onPlayback: (t: number, playing: boolean) => void; onView?: (view: View) => void },
 ): Promise<Viewer> {
   const paper = tokenColor('--paper')
   const shade = tokenColor('--flood-light')
@@ -77,39 +78,37 @@ export async function createViewer(
       const a = pose.joints[j] ?? [0, 0, 0]
       return rig.rest[j].clone().multiply(q.setFromEuler(euler.set(a[0] * DEG, a[1] * DEG, a[2] * DEG, 'XYZ')))
     })
+  // Every frame re-applies one whole pose: joints, pelvis, planted feet, shoulder blades and the handle.
+  let current: Pose = motion.steps[0].pose
   const applyPose = (pose: Pose) => {
     composite.restorePose()
     targetsOf(pose).forEach((t, k) => rig.joints[JOINT_NAMES[k]].quaternion.copy(t))
     if (pose.root) pelvis.position.set(...pose.root.position)
+    rig.setFeet?.(pose.feet ?? null)
+    rig.setScapula?.(pose.scapula ?? 0)
+    composite.setHandle(pose.handle ?? null)
+    current = pose
   }
+  const smooth = (u: number) => u * u * (3 - 2 * u)
+  const standing = (p: Pose) => (p.root?.position[1] ?? 1) > 0.7
 
-  // Pose tween: 0→1, slerping each joint from wherever it is now, so a retarget never snaps.
-  type PoseAnim = { tween: Tween; fromQ: Quaternion[]; toQ: Quaternion[]; fromP: Vector3; toP: Vector3 }
-  let poseAnim: PoseAnim | null = null
-  // Tweens to run after the current one, e.g. a step's demonstration: ease to its start, then move.
-  let poseQueue: { pose: Pose; duration: number; easing: Easing }[] = []
-  const startPose = (pose: Pose, duration: number, easing: Easing, now: number) => {
-    composite.restorePose()
-    poseAnim = {
-      tween: new Tween([0], [1], duration, easing, now),
-      fromQ: JOINT_NAMES.map((j) => rig.joints[j].quaternion.clone()),
-      toQ: targetsOf(pose),
-      fromP: pelvis.position.clone(),
-      toP: pose.root ? new Vector3(...pose.root.position) : pelvis.position.clone(),
+  // Each step's movement in from the previous step, built once.
+  const clips = motion.steps.map((s, k) => (k > 0 && s.enter ? buildClip(motion.steps[k - 1].pose, s.enter, s.pose) : null))
+  // The movement in progress: a step's clip (forwards, or backwards when stepping back) or a plain ease.
+  // `blend` eases out of wherever the figure was, so an interrupted movement never jumps.
+  type Move = { start: number; duration: number; sample: (elapsed: number) => Pose; target: Pose; blend?: Pose }
+  let move: Move | null = null
+  const BLEND_MS = 350
+  const sampleMove = (now: number): Pose => {
+    const m = move!
+    const elapsed = now - m.start
+    if (elapsed >= m.duration) {
+      move = null
+      return m.target
     }
+    const pose = m.sample(elapsed)
+    return m.blend && elapsed < BLEND_MS ? mixPose(m.blend, pose, smooth(elapsed / BLEND_MS)) : pose
   }
-  const stepPose = (now: number) => {
-    if (!poseAnim) return
-    const { tween, fromQ, toQ, fromP, toP } = poseAnim
-    const [u] = tween.value(now)
-    JOINT_NAMES.forEach((j, k) => rig.joints[j].quaternion.slerpQuaternions(fromQ[k], toQ[k], u))
-    pelvis.position.lerpVectors(fromP, toP, u)
-    if (!tween.done(now)) return
-    poseAnim = null
-    const next = poseQueue.shift()
-    if (next) startPose(next.pose, next.duration, next.easing, now)
-  }
-
   const controls = new OrbitControls(camera, renderer.domElement)
   Object.assign(controls, {
     enablePan: false, enableDamping: true, minDistance: 2, maxDistance: 7,
@@ -151,8 +150,11 @@ export async function createViewer(
   }
   let playing = false
   let t = 0
+  let repBlend: { from: Pose; start: number } | null = null
   let stepFocus: ReturnType<typeof createStepFocus> | null = null
-  let focusSetAt = 0 // when the current step's focus turns from flashing red to steady green
+  let focusAt: { focus: StepFocus; at: number } | null = null // a step's highlight waiting for its moment
+  let focusSetAt = 0 // when the current highlight turns from flashing red to steady green
+  let camAt: { view: View; at: number } | null = null // a camera move scheduled partway through a step
 
   let raf = 0
   let last = 0
@@ -160,29 +162,46 @@ export async function createViewer(
   const request = () => {
     if (!raf && !disposed && document.visibilityState === 'visible') raf = requestAnimationFrame(frame)
   }
-  function frame(now: number): void {
+  function frame(): void {
+    // One clock for everything: movements and highlights are scheduled from performance.now() too.
+    const now = performance.now()
     raf = 0
     const dt = last ? Math.min(now - last, 100) : 0
     last = now
     let busy = false
+    if (camAt && now >= camAt.at) {
+      startCam(camAt.view, 1400, 'easeInOut', now)
+      opts.onView?.(camAt.view)
+      camAt = null
+    }
+    if (camAt) busy = true
     if (camTween) {
       applyCam(camTween.value(now))
       if (camTween.done(now)) camTween = null
       else busy = true
     }
-    composite.restorePose()
-    stepPose(now)
-    if (poseAnim) busy = true
-    if (playing) {
-      if (!poseAnim) {
-        t = (t + dt / rep.duration) % 1
-        applyPose(samplePose(rep.keys, t, true))
+    if (move) {
+      applyPose(sampleMove(now))
+      busy = true
+    } else if (playing) {
+      t = (t + dt / rep.duration) % 1
+      let pose = samplePose(rep.keys, t, true)
+      if (repBlend) {
+        const u = (now - repBlend.start) / 400
+        if (u >= 1) repBlend = null
+        else pose = mixPose(repBlend.from, pose, smooth(u))
       }
+      applyPose(pose)
       opts.onPlayback(t, true)
       busy = true
-    }
+    } else applyPose(current)
     busy = controls.update() || busy
     composite.sync()
+    if (focusAt && now >= focusAt.at) {
+      stepFocus?.set(focusAt.focus, 'changing', now)
+      focusAt = null
+    }
+    if (focusAt) busy = true
     if (stepFocus?.phase === 'changing' && now >= focusSetAt) stepFocus.setPhase('set', now)
     busy = (stepFocus?.tick(now) ?? false) || busy
     renderer.render(scene, camera)
@@ -227,48 +246,109 @@ export async function createViewer(
   })
   // After the muscle materials are cloned, so the focus tint is compiled into the final materials.
   stepFocus = createStepFocus(rig, composite.apparatus, scene)
-  const differs = (pose: Pose) =>
-    targetsOf(pose).some((q, k) => q.angleTo(rig.joints[JOINT_NAMES[k]].quaternion) > 0.02) ||
-    (!!pose.root && pelvis.position.distanceTo(new Vector3(...pose.root.position)) > 0.01)
+  controls.addEventListener('start', () => (camAt = null)) // a drag also cancels a scheduled camera move
+  // Dev-only inspection hook for screenshot and clipping checks; stripped from production builds.
+  if (import.meta.env.DEV) {
+    Object.assign(window, {
+      __rep: {
+        camera, controls, rig, composite, scene, clips, rep, motion,
+        sampleRep: (u: number) => samplePose(rep.keys, u, true),
+        show(pose: Pose, cam?: { position: number[]; target: number[] }) {
+          move = null
+          playing = false
+          camTween = null
+          camAt = null
+          applyPose(pose)
+          if (cam) {
+            camera.position.set(cam.position[0], cam.position[1], cam.position[2])
+            controls.target.set(cam.target[0], cam.target[1], cam.target[2])
+          }
+          controls.update()
+          composite.sync()
+          renderer.render(scene, camera)
+        },
+      },
+    })
+  }
 
   const ms = (d: number) => (opts.reducedMotion ? 0 : d)
+  let shown = -1
   return {
     placeholder: rig.placeholder,
     goTo(i) {
       const s = motion.steps[i]
       if (!s) return
+      const prev = shown
+      shown = i
       playing = false
+      repBlend = null
       t = 0
+      camAt = null
       const now = performance.now()
-      startCam(s.camera, ms(s.duration), s.easing, now)
-      poseQueue = []
-      const focus = s.focus
-      if (focus && !opts.reducedMotion) {
-        // Demonstrate the change: ease to where it starts, then move into place while the part flashes red.
-        const from = focus.from ?? motion.steps[i - 1]?.pose ?? s.pose
-        const prep = differs(from) ? 500 : 0
-        startPose(from, prep, 'easeInOut', now)
-        poseQueue.push({ pose: s.pose, duration: focus.duration, easing: 'easeInOut' })
-        focusSetAt = now + prep + focus.duration
-        stepFocus?.set(focus, 'changing', now)
+      const view = (v: View, duration = s.duration) => {
+        startCam(v, ms(duration), s.easing, now)
+        opts.onView?.(v)
+      }
+      const highlight = (start: number, end: number) => {
+        stepFocus?.set(null, 'set', now)
+        focusAt = s.focus ? { focus: s.focus, at: start } : null
+        focusSetAt = end
+      }
+      const forward = (clip: Clip, blend?: Pose) => {
+        move = { start: now, duration: clip.duration, sample: clip.sample, target: s.pose, blend }
+        highlight(now + (s.focus?.start ?? 0), now + clip.duration)
+        if (s.enter?.camera) {
+          view(s.enter.camera.view)
+          camAt = { view: s.camera, at: now + s.enter.camera.until }
+        } else view(s.camera)
+      }
+      if (opts.reducedMotion || prev < 0) {
+        // No movement: the step's pose, highlighted as already in place.
+        move = null
+        applyPose(s.pose)
+        view(s.camera)
+        stepFocus?.set(s.focus ?? null, 'set', now)
+        focusAt = null
+      } else if (i === prev + 1 && clips[i]) {
+        forward(clips[i]!, current)
+      } else if (i === prev - 1 && clips[prev]) {
+        // Stepping back plays the later step's movement in reverse: stand up, step back over the bench...
+        const clip = clips[prev]!
+        move = { start: now, duration: clip.duration, sample: (e) => clip.sample(clip.duration - e), target: s.pose, blend: current }
+        highlight(now, now + clip.duration)
+        view(s.camera)
+      } else if (clips[i]) {
+        // A jump, or replaying this step: start its movement from the previous step's pose.
+        applyPose(motion.steps[i - 1].pose)
+        forward(clips[i]!)
+      } else if (standing(current) !== standing(s.pose)) {
+        // Can't ease between standing and seated without passing through the bench; cut instead.
+        move = null
+        applyPose(s.pose)
+        highlight(now, now + (s.focus?.duration ?? s.duration))
+        view(s.camera)
       } else {
-        startPose(s.pose, ms(s.duration), s.easing, now)
-        focusSetAt = now
-        stepFocus?.set(focus ?? null, 'set', now)
+        const from = current
+        const duration = ms(s.duration)
+        move = { start: now, duration, sample: (e) => mixPose(from, s.pose, EASE[s.easing](e / duration)), target: s.pose }
+        highlight(now, now + (s.focus?.duration ?? s.duration))
+        view(s.camera)
       }
       request()
     },
     setCamera(view) {
+      camAt = null
       startCam(view, ms(700), 'easeInOut', performance.now())
       request()
     },
     play() {
       if (playing) return
-      // ease into the rep's current frame instead of snapping to it
       const now = performance.now()
-      poseQueue = []
+      move = null
+      focusAt = null
       stepFocus?.set(null, 'set', now)
-      startPose(samplePose(rep.keys, t, true), ms(400), 'easeOut', now)
+      // Ease into the rep's current frame instead of snapping, unless standing (the ease would cross the bench).
+      repBlend = opts.reducedMotion || standing(current) ? null : { from: current, start: now }
       playing = true
       request()
     },
@@ -278,8 +358,9 @@ export async function createViewer(
     },
     seek(v) {
       playing = false
-      poseAnim = null
-      poseQueue = []
+      move = null
+      repBlend = null
+      focusAt = null
       stepFocus?.set(null, 'set', performance.now())
       t = Math.min(Math.max(v, 0), 1)
       applyPose(samplePose(rep.keys, t, true))

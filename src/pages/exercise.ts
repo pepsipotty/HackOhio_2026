@@ -176,7 +176,7 @@ function built(e: Exercise, motion: ExerciseMotion): void {
     starting = true
     try {
       const { createViewer } = await import('../viewer/viewer')
-      viewer = await createViewer(canvas, motion, { reducedMotion: reduced, onPlayback })
+      viewer = await createViewer(canvas, motion, { reducedMotion: reduced, onPlayback, onView: setView })
     } catch (err) {
       console.error(err)
       return showOff("The 3D view couldn't start. Every step is written out alongside.")

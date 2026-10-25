@@ -3,7 +3,7 @@
 import { Object3D, Quaternion, Vector3 } from 'three'
 import { JOINT_NAMES, JOINT_PARENT, type JointName } from '../data/joints'
 import type { Rig } from './rig'
-import { createSeatedSupport } from './seated-support'
+import { createSeatedSupport, type FeetTargets } from './seated-support'
 
 export const HUMANOID_BONES: Record<JointName, string> = {
   pelvis: 'mixamorig1Hips', spine: 'mixamorig1Spine', chest: 'mixamorig1Spine2',
@@ -71,10 +71,37 @@ export function adaptHumanoid(asset: Object3D): Rig {
   asset.traverse(bone => { const name = byBone.get(bone); if (name) ordered.push([bone, name]) })
   const position = new Vector3(), rotation = new Quaternion(), parentRotation = new Quaternion()
   const supportFeet = createSeatedSupport(root, joints, rest)
+
+  // Shoulder blades: the clavicle bones swing about a vertical axis through the sternum end, carrying the
+  // arm roots back and in. The arms keep their authored direction; only where they hang from moves.
+  const UP = new Vector3(0, 1, 0)
+  const clavicles = (['L', 'R'] as const).map(side => {
+    const bone = asset.getObjectByName(`mixamorig1${side === 'L' ? 'Left' : 'Right'}Shoulder`)
+    const shoulder = joints[`shoulder_${side}`]
+    return bone && {
+      bone, shoulder, sign: side === 'L' ? 1 : -1, restLocal: bone.quaternion.clone(), restOffset: shoulder.position.clone(),
+      pivot: joints.chest.worldToLocal(bone.getWorldPosition(new Vector3())),
+    }
+  }).filter(c => !!c)
+  let retraction = 0, feet: FeetTargets | null = null
+  const turn = new Quaternion(), chestRotation = new Quaternion(), axis = new Vector3()
   const update = () => {
-    supportFeet()
+    for (const c of clavicles) c.shoulder.position.copy(c.restOffset).sub(c.pivot).applyAxisAngle(UP, c.sign * retraction).add(c.pivot)
+    supportFeet(feet)
     controls.updateWorldMatrix(true, true)
+    joints.chest.getWorldQuaternion(chestRotation)
+    axis.copy(UP).applyQuaternion(chestRotation)
     for (const [bone, name] of ordered) {
+      if (name === 'shoulder_L' || name === 'shoulder_R') {
+        const c = clavicles.find(k => k.shoulder === joints[name])
+        if (c) {
+          c.bone.parent!.updateWorldMatrix(true, false)
+          c.bone.parent!.getWorldQuaternion(parentRotation)
+          turn.setFromAxisAngle(axis, c.sign * retraction)
+          rotation.copy(parentRotation).multiply(c.restLocal).premultiply(turn)
+          c.bone.quaternion.copy(parentRotation.invert().multiply(rotation))
+        }
+      }
       bone.parent!.updateWorldMatrix(true, false)
       joints[name].getWorldPosition(position)
       bone.position.copy(bone.parent!.worldToLocal(position))
@@ -86,5 +113,9 @@ export function adaptHumanoid(asset: Object3D): Rig {
     asset.updateWorldMatrix(true, true)
   }
   update()
-  return { root, joints, rest, placeholder: false, update }
+  return {
+    root, joints, rest, placeholder: false, update,
+    setFeet(next) { feet = next },
+    setScapula(degrees) { retraction = degrees * Math.PI / 180 },
+  }
 }

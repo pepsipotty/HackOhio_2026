@@ -254,6 +254,37 @@ main { padding-block: var(--s2) var(--s9); }
 .btn-outline:hover:not(:disabled) { background: rgb(255 255 255 / 0.14); }
 .btn-outline:disabled { border-color: var(--flood-light); color: var(--flood-light); cursor: not-allowed; }
 
+/* ---------- Desktop: the whole exercise fits one screen ----------
+   The viewport keeps its size (screen minus header). The panel fills the same height: name and step row on
+   top, the step text in the middle (scrolls only on very short windows), Previous/Next pinned underneath. */
+@media (min-width: 1024px) {
+  main { padding-bottom: 40px; }
+  .ex { height: calc(100svh - 120px); min-height: 560px; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+  .viewport { position: relative; top: auto; min-height: 0; }
+  .panel { min-height: 0; padding-top: var(--s2); }
+  .step-row-wrap { margin-top: var(--s4); padding-bottom: 0; }
+  /* side padding and matching negative margin keep focus rings from being clipped by the scroll area */
+  .step {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: var(--s4) -8px 0;
+    padding: 0 8px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--flood-light) transparent;
+  }
+  /* "OF 7" moves up beside the numeral, over the step title, instead of under it */
+  .step__head { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s5); align-items: end; }
+  .step__mark { display: contents; }
+  .step__num { grid-area: 1 / 1 / span 2; font-size: clamp(64px, min(10vw, 16svh), 168px); }
+  .step__of { grid-area: 1 / 2; align-self: end; }
+  .step__title { grid-area: 2 / 2; }
+  .step__instruction, .mistake, .cues { margin-top: var(--s3); }
+  .mistake { padding: var(--s3) var(--s5); }
+  .cues { gap: 6px; }
+  .step-nav { flex: none; margin-top: var(--s3); }
+}
+
 /* ---------- Coming soon ---------- */
 .soon { row-gap: var(--s7); align-items: start; }
 .soon__head { grid-column: 1 / -1; padding-top: var(--s5); }

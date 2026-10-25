@@ -24,8 +24,10 @@ describe('seated cable row motion', () => {
       // every step points at what it changes
       expect(s.focus?.parts.length, s.id).toBeGreaterThan(0)
       for (const p of s.focus!.parts) expect(FOCUS_PARTS).toContain(p)
-      expect(s.focus!.duration, s.id).toBeGreaterThan(0)
-      for (const j of Object.keys(s.focus!.from?.joints ?? {})) expect(JOINT_NAMES).toContain(j)
+      if (s.enter) {
+        expect(s.focus!.start ?? 0, s.id).toBeGreaterThanOrEqual(0)
+        expect(s.focus!.start ?? 0, s.id).toBeLessThan(s.enter.duration)
+      } else expect(s.focus!.duration, s.id).toBeGreaterThan(0)
     }
   })
 

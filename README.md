@@ -48,7 +48,7 @@ The asset was exported from the neighboring `HackOhio_2026/fbx-preview` harness 
 2. Register it in `getMotion` (`src/data/motion.ts`).
 3. Set `built: true` for that exercise in `src/data/exercises.ts`.
 
-A pose file can include an optional `rep` keyframe track for the moving rep.
+A pose file can include an optional `rep` keyframe track for the moving rep. A step's optional `enter` field holds keyframes for the movement from the previous step into it, such as walking in, stepping over the bench or the staggered grip. `src/lib/clip.ts` interpolates these keyframes. Planted feet, the handle state and shoulder-blade retraction are keyed alongside the joints.
 
 The Seated Cable Row content is a draft pending review by a qualified coach.
 
