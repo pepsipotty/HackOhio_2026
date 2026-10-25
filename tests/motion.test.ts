@@ -38,6 +38,14 @@ describe('seated cable row motion', () => {
     for (let i = 1; i < ts.length; i++) expect(ts[i]).toBeGreaterThan(ts[i - 1])
   })
 
+  test('arms-long poses hold the handle explicitly, so it never drops when a step or the rep reaches them', async () => {
+    const { samplePose } = await import('../src/lib/tween')
+    const m = (await getMotion('seated-cable-row'))!
+    const held = { carry: 1, left: 1, right: 1 }
+    for (const id of ['spine-position', 'controlled-return']) expect(m.steps.find((s) => s.id === id)!.pose.handle, id).toEqual(held)
+    for (const t of [0, .1, .9, 1]) expect(samplePose(m.rep!.keys, t, true).handle, `rep ${t}`).toEqual(held)
+  })
+
   test('unknown exercise has no motion', async () => {
     expect(await getMotion('plank')).toBeUndefined()
   })

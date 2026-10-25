@@ -10,13 +10,11 @@ const START: Vec3 = [0.55, 1.0, -1.2]
 // Far enough back on the pad that the backs of the thighs rest along it and the knees are only softly bent;
 // a touch higher than the pelvis's resting height so the thighs lie on the pad rather than sink into it.
 const SEATED: Vec3 = [0, 0.545, -0.02]
-// Scooted forward on the pad, knees bent, to reach the handle on the footplate bar.
-const REACH_Z = 0.28, REACH_Y = 0.53
 // Seated, the thighs open slightly (degrees) so the knees track out over the feet instead of caving in,
 // and the shins pass beside the front of the pad.
 const HIP_OUT = 11
 /** Seated hip angles: flexion plus the outward opening, mirrored. */
-const hips = (flex: number): { hip_L: Vec3; hip_R: Vec3 } => ({ hip_L: [flex, 0, -HIP_OUT], hip_R: [flex, 0, HIP_OUT] })
+const hips = (flex: number, out = HIP_OUT): { hip_L: Vec3; hip_R: Vec3 } => ({ hip_L: [flex, 0, -out], hip_R: [flex, 0, out] })
 
 // Left and right sides mirror each other. abduct takes the elbows out from the sides (degrees).
 function pose(root: Vec3, spine: number, chest: number, hip: number, knee: number, shoulder: number, elbow: number, hinge = 0, abduct = 0): Pose {
@@ -63,7 +61,8 @@ const STANDING: Pose = {
 // Hands hang just outside the pad's edges.
 const SEAT_AND_FEET: Pose = { ...pose(SEATED, 0, 0, 85, 25, 0, 10, 0, 10), handle: ON_PAD }
 const GRIP: Pose = { ...pose(SEATED, 0, 4, 85, 25, 75, 0, 30), handle: HELD }
-const SPINE_POSITION = pose(SEATED, 0, 2, 85, 25, 90, 5, 24)
+// Sitting tall with the arms long: the torso just off vertical, the hands held a little below the chest.
+const SPINE_POSITION: Pose = { ...pose(SEATED, 0, 2, 85, 25, 74, 5, 16), handle: HELD }
 // Elbows travel back just outside the ribs, so the forearms pass beside the torso and the hands stop in front of it.
 const THE_PULL: Pose = { ...pose(SEATED, 0, -2, 85, 25, 7, 81, -6, 22), scapula: 8 }
 // The squeeze: shoulder blades pinch together and the chest lifts a touch, elbows drift just behind the torso.
@@ -79,44 +78,47 @@ const legs = (side: 'L' | 'R', hip: [number, number, number], knee: number): Key
 const arms = (l: number, r: number, el = 15, er = 15, abduct = 0): KeyPose['joints'] => ({
   shoulder_L: [l, 0, -abduct], shoulder_R: [r, 0, abduct], elbow_L: [el, 0, 0], elbow_R: [er, 0, 0],
 })
+/** Walking torso: the hips turn with the swinging leg (degrees, +Y left), the chest turns back against them. */
+const gait = (yaw: number): KeyPose['joints'] => ({ pelvis: [0, yaw, 0], spine: [3, 0, 0], chest: [0, -yaw * 1.2, 0], neck: [-2, 0, 0] })
 const asKeyPose = (p: Pose): KeyPose => ({ root: p.root?.position, joints: p.joints, scapula: p.scapula ?? 0 })
 
 // ---- step 2: walk two steps to the bench, step over it, sit, and lift the feet onto the plates ----
 const L0 = [START[0] + .153, START[2] - .062] as const, R0 = [START[0] - .153, START[2] - .062] as const
 const WALK_IN: Keyframe[] = [
-  // weight onto the left foot, right heel starts to rise
-  k(200, { root: [.57, .995, -1.19], feet: { L: flat(...L0), R: heelUp(...R0, 8) } }),
-  k(380, { root: [.585, .99, -1.15], feet: { R: heelUp(...R0, 30) } }),
-  // right foot swings through; the opposite arm swings forward
-  k(560, { root: [.585, 1, -1.03], feet: { R: air(.35, .165, -1.05, -8) }, joints: { ...legs('R', [30, 0, 0], 50), ...legs('L', [0, 0, 0], 5), ...arms(14, -10, 18, 12) } }),
-  k(740, { root: [.52, .97, -.91], feet: { L: flat(...L0), R: toesUp(.3, -.8, 14) }, joints: legs('R', [20, 0, 0], 5) }),
-  k(840, { root: [.49, .975, -.85], feet: { R: flat(.3, -.8), L: heelUp(...L0, 22) } }),
-  k(940, { root: [.47, .985, -.79], feet: { L: heelUp(...L0, 38) } }),
+  // weight onto the left foot, right heel starts to rise; the body settles a little into the first step
+  k(200, { root: [.57, .985, -1.19], feet: { L: flat(...L0), R: heelUp(...R0, 8) }, joints: gait(1) }),
+  k(380, { root: [.585, .97, -1.15], feet: { R: heelUp(...R0, 30) }, joints: { ...gait(3), ...arms(8, -6, 18, 12) } }),
+  // right foot swings through over a softly bent standing knee; the left arm swings forward, the hips turn with the leg
+  k(560, { root: [.585, .985, -1.03], feet: { R: air(.35, .165, -1.05, -8) }, joints: { ...legs('R', [30, 0, 0], 50), ...legs('L', [0, 0, 0], 5), ...arms(20, -14, 26, 12), ...gait(5) } }),
+  // heel strike: both feet down, the body at its lowest, arms at the ends of their swing
+  k(740, { root: [.52, .955, -.91], feet: { L: flat(...L0), R: toesUp(.3, -.8, 14) }, joints: { ...legs('R', [20, 0, 0], 5), ...arms(22, -16, 28, 12), ...gait(4) } }),
+  k(840, { root: [.49, .96, -.85], feet: { R: flat(.3, -.8), L: heelUp(...L0, 22) } }),
+  k(940, { root: [.47, .97, -.79], feet: { L: heelUp(...L0, 38) }, joints: { ...arms(4, 2, 18, 18), ...gait(0) } }),
   // left foot swings through
-  k(1120, { root: [.46, 1, -.65], feet: { L: air(.67, .165, -.78, -8) }, joints: { ...legs('L', [30, 0, 0], 50), ...legs('R', [0, 0, 0], 5), ...arms(-10, 14, 12, 18) } }),
-  k(1300, { root: [.47, .97, -.47], feet: { R: flat(.3, -.8), L: toesUp(.6, -.3, 14) }, joints: legs('L', [20, 0, 0], 5) }),
-  k(1400, { root: [.47, .975, -.41], feet: { L: flat(.6, -.3), R: heelUp(.3, -.8, 22) } }),
-  k(1500, { root: [.47, .985, -.35], feet: { R: heelUp(.3, -.8, 38) } }),
-  // right foot through, landing beside the bench
-  k(1680, { root: [.47, 1, -.22], feet: { R: air(.27, .165, -.39, -8) }, joints: { ...legs('R', [30, 0, 0], 50), ...legs('L', [0, 0, 0], 5), ...arms(14, -10, 18, 12) } }),
-  k(1860, { root: [.41, .975, -.06], feet: { L: flat(.6, -.3), R: toesUp(.23, .02, 12) }, joints: legs('R', [15, 0, 0], 5) }),
-  k(1960, { root: [.4, .98, -.01], feet: { R: flat(.23, .02), L: heelUp(.6, -.3, 18) } }),
-  // a short step to bring the left foot alongside, and stand
-  k(2160, { root: [.39, .995, .04], feet: { L: air(.56, .13, -.14, -5) }, joints: { ...legs('L', [20, 0, 0], 35), ...arms(4, 2, 10, 10) } }),
-  k(2340, { root: [.38, 1, .07], feet: { L: flat(.53, .02) }, joints: { ...legs('L', [5, 0, 0], 5), ...legs('R', [5, 0, 0], 5), ...arms(0, 0, 8, 8) } }),
-  k(2500, { root: [.38, 1, .08] }),
+  k(1120, { root: [.46, .985, -.65], feet: { L: air(.67, .165, -.78, -8) }, joints: { ...legs('L', [30, 0, 0], 50), ...legs('R', [0, 0, 0], 5), ...arms(-14, 20, 12, 26), ...gait(-5) } }),
+  k(1300, { root: [.47, .955, -.47], feet: { R: flat(.3, -.8), L: toesUp(.6, -.3, 14) }, joints: { ...legs('L', [20, 0, 0], 5), ...arms(-16, 22, 12, 28), ...gait(-4) } }),
+  k(1400, { root: [.47, .96, -.41], feet: { L: flat(.6, -.3), R: heelUp(.3, -.8, 22) } }),
+  k(1500, { root: [.47, .97, -.35], feet: { R: heelUp(.3, -.8, 38) }, joints: { ...arms(2, 4, 18, 18), ...gait(0) } }),
+  // right foot through, landing beside the bench; slowing down, so the swings get smaller
+  k(1680, { root: [.47, .985, -.22], feet: { R: air(.27, .165, -.39, -8) }, joints: { ...legs('R', [30, 0, 0], 50), ...legs('L', [0, 0, 0], 5), ...arms(16, -10, 24, 12), ...gait(4) } }),
+  k(1860, { root: [.41, .96, -.06], feet: { L: flat(.6, -.3), R: toesUp(.23, .02, 12) }, joints: { ...legs('R', [15, 0, 0], 5), ...arms(14, -8, 22, 12), ...gait(3) } }),
+  k(1960, { root: [.4, .965, -.01], feet: { R: flat(.23, .02), L: heelUp(.6, -.3, 18) } }),
+  // a short step to bring the left foot alongside, and stand, looking down at the bench
+  k(2160, { root: [.39, .98, .04], feet: { L: air(.56, .13, -.14, -5) }, joints: { ...legs('L', [20, 0, 0], 35), ...arms(4, 2, 14, 12), ...gait(-1) } }),
+  k(2340, { root: [.38, .985, .07], feet: { L: flat(.53, .02) }, joints: { ...legs('L', [5, 0, 0], 5), ...legs('R', [5, 0, 0], 5), ...arms(0, 0, 10, 10), pelvis: [0, 0, 0], spine: [2, 0, 0], chest: [0, 0, 0], neck: [8, 0, 0] } }),
+  k(2500, { root: [.38, .99, .08] }),
   // shift onto the left foot and swing the right leg up and over the bench pad
-  k(2750, { root: [.45, .985, .08], feet: { R: heelUp(.23, .02, 15) }, joints: arms(5, 5, 12, 12, 14) }),
-  k(3000, { root: [.46, .98, .08], feet: { R: air(.21, .36, .11, -12) }, joints: legs('R', [70, 0, 10], 95) }),
-  k(3250, { root: [.44, .98, .08], feet: { R: air(.07, .66, .15, -2) }, joints: legs('R', [80, 0, 22], 100) }),
-  k(3500, { root: [.36, .975, .08], feet: { R: air(-.17, .64, .15, 0) }, joints: legs('R', [60, 0, 28], 80) }),
-  k(3750, { root: [.24, .95, .08], feet: { R: air(-.29, .27, .08, 0) }, joints: legs('R', [25, 0, 18], 30) }),
-  k(3950, { root: [.13, .92, .08], feet: { L: flat(.53, .02), R: flat(-.29, .05) }, joints: legs('R', [5, 0, 12], 8) }),
+  k(2750, { root: [.45, .985, .08], feet: { R: heelUp(.23, .02, 15) }, joints: { ...arms(5, 5, 14, 14, 14), spine: [4, 0, 0], neck: [12, 0, 0] } }),
+  k(3000, { root: [.46, .98, .08], feet: { R: air(.23, .55, .11, 6) }, joints: legs('R', [75, 0, 12], 100) }),
+  k(3250, { root: [.44, .98, .08], feet: { R: air(.07, .7, .15, -2) }, joints: { ...legs('R', [80, 0, 22], 100), ...arms(10, 4, 20, 16, 22), spine: [9, 0, 0], neck: [16, 0, 0] } }),
+  k(3500, { root: [.36, .975, .08], feet: { R: air(-.17, .66, .15, 0) }, joints: legs('R', [60, 0, 32], 80) }),
+  k(3750, { root: [.24, .93, .08], feet: { R: air(-.29, .27, .08, 0) }, joints: { ...legs('R', [32, 0, 44], 50), ...arms(6, 6, 16, 16, 14), spine: [5, 0, 0], neck: [10, 0, 0] } }),
+  k(3950, { root: [.13, .87, .08], feet: { L: flat(.53, .02), R: flat(-.29, .05) }, joints: legs('R', [18, 0, 44], 32) }),
   // weight onto the right foot; the left steps in, so the bench is between the feet
-  k(4150, { root: [.05, .93, .08], feet: { L: heelUp(.53, .02, 15) }, joints: legs('L', [5, 0, 0], 5) }),
+  k(4150, { root: [.05, .885, .08], feet: { L: heelUp(.53, .02, 15) }, joints: { ...legs('L', [5, 0, 0], 5), ...legs('R', [16, 0, 40], 28) } }),
   k(4350, { feet: { L: air(.42, .16, .05, -5) }, joints: legs('L', [25, 0, -6], 45) }),
   k(4550, { root: [0, .95, .08], feet: { L: flat(.29, .05) }, joints: { ...legs('L', [5, 0, -12], 8), ...arms(0, 0, 10, 10, 4) } }),
-  k(4700, { root: [0, .955, .08], joints: { pelvis: [0, 0, 0], spine: [0, 0, 0], neck: [0, 0, 0] } }),
+  k(4700, { root: [0, .955, .08], joints: { pelvis: [0, 0, 0], spine: [2, 0, 0], chest: [0, 0, 0], neck: [6, 0, 0] } }),
   // sit back and down: lean forward for balance, arms forward, then upright on the bench
   k(5200, {
     root: [0, .74, .03],
@@ -135,38 +137,34 @@ const WALK_IN: Keyframe[] = [
   k(6850, { feet: { R: PLATE_R }, joints: legs('R', [85, 0, HIP_OUT], 25) }),
 ]
 
-// ---- step 3: bend the knees to scoot forward and lean to the handle on the footplate bar; the left hand takes it,
-// the right a beat later; then push back with the legs to the seat and sit up tall, arms long ----
+// ---- step 3: stay on the seat; let the knees fall apart so the arms have room, and fold forward from the hips
+// between them to the handle on the footplate bar. The left hand takes it, the right a beat later; then sit up
+// tall with the arms long as the knees come back in. ----
+const KNEES_APART = 26
 const GRIP_IN: Keyframe[] = [
-  k(550, {
-    root: [0, REACH_Y, .1],
-    joints: { pelvis: [16, 0, 0], spine: [5, -4, 0], neck: [-12, 0, 0], ...hips(101), ...arms(58, 40, 12, 18) },
+  // the hands lift off beside the pad first, clearing the thighs, then come in as the knees start to part
+  k(250, { joints: arms(14, 12, 48, 48, 8) }),
+  k(450, {
+    joints: { pelvis: [18, 0, 0], spine: [5, 0, 0], neck: [-10, 0, 0], ...hips(103, 20), ...arms(30, 28, 55, 55, -16) },
   }),
-  // hands forward over the knees, clear of the pad, before reaching down past its front end
-  k(850, {
-    root: [0, REACH_Y, .21], handle: { left: 0 },
-    joints: { pelvis: [30, 0, 0], spine: [9, -5, 0], neck: [-20, 0, 0], ...hips(115), shoulder_L: [66, 0, 4], shoulder_R: [48, 0, 0], elbow_L: [6, 0, 0], elbow_R: [16, 0, 0] },
+  // folding forward between the knees, hands reaching out over the knees and past the end of the pad, the left leading
+  k(900, {
+    handle: { left: 0 },
+    joints: { pelvis: [44, 0, 0], spine: [11, -4, 0], chest: [5, 0, 0], neck: [-26, 0, 0], ...hips(129, KNEES_APART), ...arms(106, 98, 10, 16, -8) },
   }),
-  k(1150, {
-    root: [0, REACH_Y, REACH_Z],
-    joints: {
-      pelvis: [44, 0, 0], spine: [14, -6, 0], chest: [8, 0, 0], neck: [-30, 0, 0], ...hips(129),
-      shoulder_L: [58, 0, 4], shoulder_R: [34, 0, 0], elbow_L: [6, 0, 0], elbow_R: [22, 0, 0],
-    },
+  // full reach, looking at the handle; the left hand drops onto it, the right hovers just above
+  k(1250, {
+    handle: { left: 1, right: 0 },
+    joints: { pelvis: [62, 0, 0], spine: [14, -5, 0], chest: [8, 0, 0], neck: [-36, 0, 0], ...hips(147, KNEES_APART), shoulder_L: [118, 0, 4], shoulder_R: [122, 0, -10], elbow_L: [6, 0, 0], elbow_R: [20, 0, 0] },
   }),
-  k(1250, { handle: { left: 1, right: 0 } }),
-  k(1550, { joints: { spine: [14, 0, 0], shoulder_R: [58, 0, -4], elbow_R: [6, 0, 0] } }),
+  k(1550, { joints: { spine: [14, 0, 0], shoulder_R: [118, 0, -6], elbow_R: [8, 0, 0] } }),
   k(1600, { handle: { right: 1 } }),
-  // both hands on: lift it off the bar and sit up a little
-  k(1800, { root: [0, REACH_Y, REACH_Z], handle: { carry: 0 }, joints: { pelvis: [44, 0, 0], shoulder_L: [58, 0, 4], shoulder_R: [58, 0, -4], neck: [-30, 0, 0] } }),
-  k(2350, {
-    root: [0, REACH_Y, .22], handle: { carry: 1 },
-    joints: { pelvis: [38, 0, 0], spine: [6, 0, 0], chest: [6, 0, 0], neck: [-24, 0, 0], ...hips(123), ...arms(66, 66, 3, 3) },
-  }),
-  // the legs push the hips back along the pad, arms long, until the knees are only softly bent
-  k(3050, {
-    root: [0, SEATED[1], .01],
-    joints: { pelvis: [32, 0, 0], spine: [2, 0, 0], chest: [5, 0, 0], neck: [-20, 0, 0], ...hips(117), ...arms(72, 72, 1, 1) },
+  // both hands on: a short pause, then lift it up off the bar and sit up, knees drifting back in
+  k(1800, { handle: { carry: 0 }, joints: { pelvis: [62, 0, 0], neck: [-36, 0, 0], ...hips(147, KNEES_APART) } }),
+  k(2100, { handle: { carry: .6 }, joints: { pelvis: [57, 0, 0], spine: [12, 0, 0], neck: [-33, 0, 0], ...hips(142, 24), ...arms(116, 116, 4, 4) } }),
+  k(2300, { handle: { carry: 1 } }),
+  k(2450, {
+    joints: { pelvis: [42, 0, 0], spine: [6, 0, 0], chest: [5, 0, 0], neck: [-26, 0, 0], ...hips(127, 18), ...arms(86, 86, 3, 3) },
   }),
 ]
 
@@ -214,15 +212,15 @@ const motion: ExerciseMotion = {
       id: 'grip',
       title: 'Grip',
       instruction:
-        'Bend your knees to slide forward, hinge from your hips (bend at the hips, not the back) and take the handle with both palms facing each other. Then push back with your legs until your knees are only softly bent, and sit up tall, arms straight, so the weight lifts off the stack.',
+        'Let your knees fall apart a little to make room for your arms, hinge forward from your hips (bend at the hips, not the back) and take the handle with both palms facing each other. Then sit back up tall, knees softly bent, arms straight, so the weight lifts off the stack.',
       mistake: 'Rounding your back to reach the handle instead of hinging at the hips.',
       cues: ['Palms face each other', 'Arms long, shoulders relaxed'],
       camera: 'top',
       // The pelvis leads the reach; hip counter-rotation and foot support keep the feet planted.
       pose: GRIP,
       focus: { parts: ['hands', 'handle'], start: 300 },
-      // Watch the reach and the push back from the side (left hand nearest), then look down once seated.
-      enter: { duration: 3700, keys: GRIP_IN, camera: { view: 'side', until: 3100 } },
+      // Watch the reach from the side (left hand nearest), then look down once he sits up with it.
+      enter: { duration: 3200, keys: GRIP_IN, camera: { view: 'side', until: 2300 } },
       duration: 1100,
       easing: 'easeInOut',
     },

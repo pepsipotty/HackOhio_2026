@@ -118,7 +118,8 @@ test('pelvis hinges through the row while both feet remain fixed on the footplat
       expect(rotation.angleTo(feet[index].rotation)).toBeLessThan(.001)
     }
   }
-  expect(Math.max(...hips) - Math.min(...hips)).toBeGreaterThan(25)
+  // a clear hip hinge, from sitting tall (just off vertical) to leaning slightly back at the squeeze
+  expect(Math.max(...hips) - Math.min(...hips)).toBeGreaterThan(20)
   expect(Math.max(...chests) - Math.min(...chests)).toBeGreaterThan(.12)
 })
 
@@ -220,6 +221,125 @@ test('seated well back: thighs rest along the pad, knees softly bent and over th
     }
   }
 }, 60000)
+
+
+// Bone capsules: closest distance between two segments.
+function segmentDistance(p1: Vector3, q1: Vector3, p2: Vector3, q2: Vector3) {
+  const d1 = q1.clone().sub(p1), d2 = q2.clone().sub(p2), r = p1.clone().sub(p2)
+  const a = d1.dot(d1), e = d2.dot(d2), f = d2.dot(r), c = d1.dot(r), b = d1.dot(d2)
+  const den = a * e - b * b
+  let s = den > 1e-9 ? Math.min(1, Math.max(0, (b * f - c * e) / den)) : 0
+  let t = (b * s + f) / e
+  if (t < 0) { t = 0; s = Math.min(1, Math.max(0, -c / a)) } else if (t > 1) { t = 1; s = Math.min(1, Math.max(0, (b - c) / a)) }
+  return p1.clone().addScaledVector(d1, s).distanceTo(p2.clone().addScaledVector(d2, t))
+}
+
+test('reaching for the handle, the arms pass between the parted knees and over the end of the pad, not through them', async () => {
+  const { Object3D, SkinnedMesh } = await import('three')
+  const { buildClip } = await import('../src/lib/clip')
+  const { createRowGrip, orientRowHandle } = await import('../src/viewer/row-grip')
+  const { HANDLE_REST } = await import('../src/data/row-station')
+  const rig = await humanoid(), motion = (await getMotion('seated-cable-row'))!
+  rig.root.position.set(-1.85, .09, 0)
+  rig.root.rotation.y = Math.PI / 2
+  const grip = createRowGrip(rig)
+  const i = motion.steps.findIndex(s => s.id === 'grip')
+  const clip = buildClip(motion.steps[i - 1].pose, motion.steps[i].enter!, motion.steps[i].pose)
+  // The handle as cable-row-composite.ts places it: on the bar until carried, then where the hands hold it.
+  const exit = new Vector3(-.88, .56, 0), rest = new Vector3(...HANDLE_REST), handle = new Object3D()
+  const smooth = (u: number) => u * u * (3 - 2 * u), clamp01 = (u: number) => Math.min(1, Math.max(0, u))
+  const seatZ = motion.steps[i].pose.root!.position[2]
+  // Skin that follows the forearms and hands, checked against the bench pad.
+  const arms: { mesh: InstanceType<typeof SkinnedMesh>; vertices: number[] }[] = []
+  rig.root.traverse(o => {
+    if (!(o instanceof SkinnedMesh)) return
+    const index = o.geometry.attributes.skinIndex, weight = o.geometry.attributes.skinWeight, vertices: number[] = []
+    for (let k = 0; k < index.count; k++) {
+      let best = 0, bone = 0
+      for (let c = 0; c < 4; c++) if (weight.getComponent(k, c) > best) { best = weight.getComponent(k, c); bone = index.getComponent(k, c) }
+      if (/Hand|ForeArm/.test(o.skeleton.bones[bone]?.name ?? '')) vertices.push(k)
+    }
+    arms.push({ mesh: o, vertices })
+  })
+  const v = new Vector3()
+  for (let time = 0; time <= clip.duration; time += 100) {
+    const pose = clip.sample(time)
+    expect(pose.root!.position[2], 'stays on the seat').toBeCloseTo(seatZ, 6)
+    grip.restore()
+    for (const name of JOINT_NAMES) {
+      const a = pose.joints[name] ?? [0, 0, 0]
+      rig.joints[name].quaternion.copy(rig.rest[name]).multiply(new Quaternion().setFromEuler(new Euler(...a.map(x => x * Math.PI / 180) as [number, number, number])))
+    }
+    rig.joints.pelvis.position.set(...pose.root!.position)
+    rig.update!()
+    const at = (n: typeof JOINT_NAMES[number]) => rig.joints[n].getWorldPosition(new Vector3())
+    const hold = pose.handle!
+    const hands = at('wrist_L').add(at('wrist_R')).multiplyScalar(.5)
+    hands.addScaledVector(hands.clone().sub(exit).normalize(), -.19).y += .04
+    const lift = smooth(clamp01(hold.carry))
+    handle.position.copy(rest).lerp(hands, lift)
+    orientRowHandle(handle, new Vector3(-1, 0, 0))
+    const resting = handle.quaternion.clone()
+    orientRowHandle(handle, handle.position.clone().sub(exit))
+    handle.quaternion.slerpQuaternions(resting, handle.quaternion.clone(), lift)
+    handle.updateWorldMatrix(true, true)
+    if (hold.left > 0 || hold.right > 0) grip.solve(handle, 1, [clamp01(hold.left), clamp01(hold.right)])
+    const legs = (['L', 'R'] as const).flatMap(s => [[at(`hip_${s}`), at(`knee_${s}`), .07], [at(`knee_${s}`), at(`ankle_${s}`), .05]] as const)
+    for (const s of ['L', 'R'] as const) {
+      const shoulder = at(`shoulder_${s}`), elbow = at(`elbow_${s}`), wrist = at(`wrist_${s}`)
+      const fingers = wrist.clone().addScaledVector(wrist.clone().sub(elbow).normalize(), .09)
+      for (const [a, b, r] of [[shoulder, elbow, .045], [elbow, wrist, .037], [wrist, fingers, .03]] as const)
+        for (const [c, d, r2] of legs) expect(segmentDistance(a, b, c, d) - r - r2, `${time} ms, ${s} arm`).toBeGreaterThan(-.015)
+    }
+    rig.root.updateMatrixWorld(true)
+    let deepest = 0
+    for (const { mesh, vertices } of arms) for (const k of vertices) {
+      mesh.getVertexPosition(k, v).applyMatrix4(mesh.matrixWorld)
+      // Row bench pad: station x -2.31..-1.29, y .4175..4825, z ±.145.
+      if (v.x < -2.31 || v.x > -1.29 || Math.abs(v.z) > .145 || v.y > .4825 || v.y < .4175) continue
+      deepest = Math.max(deepest, Math.min(.4825 - v.y, .145 - Math.abs(v.z), -1.29 - v.x))
+    }
+    expect(deepest, `${time} ms, hands into the pad`).toBeLessThan(.005)
+  }
+}, 60000)
+
+test('stepping over the bench, the legs clear the pad', async () => {
+  const { SkinnedMesh } = await import('three')
+  const { buildClip } = await import('../src/lib/clip')
+  const rig = await humanoid(), motion = (await getMotion('seated-cable-row'))!
+  rig.root.position.set(-1.85, 0, 0)
+  rig.root.rotation.y = Math.PI / 2
+  const meshes: InstanceType<typeof SkinnedMesh>[] = []
+  rig.root.traverse(o => { if (o instanceof SkinnedMesh) meshes.push(o) })
+  const i = motion.steps.findIndex(s => s.id === 'seat-and-feet')
+  const clip = buildClip(motion.steps[i - 1].pose, motion.steps[i].enter!, motion.steps[i].pose)
+  const v = new Vector3()
+  // From swinging the right leg up until both feet are down astride the bench, before he sits.
+  for (let time = 2700; time <= 4700; time += 50) {
+    const pose = clip.sample(time)
+    for (const name of JOINT_NAMES) {
+      const a = pose.joints[name] ?? [0, 0, 0]
+      rig.joints[name].quaternion.copy(rig.rest[name]).multiply(new Quaternion().setFromEuler(new Euler(...a.map(x => x * Math.PI / 180) as [number, number, number])))
+    }
+    rig.joints.pelvis.position.set(...pose.root!.position)
+    rig.root.position.y = .09 * Math.min(1, Math.max(0, (1 - pose.root!.position[1]) / .3)) // as the composite lifts it
+    rig.setFeet?.(pose.feet ?? null)
+    rig.update!()
+    rig.root.updateMatrixWorld(true)
+    let deepest = 0
+    for (const mesh of meshes) {
+      const pos = mesh.geometry.attributes.position
+      for (let k = 0; k < pos.count; k += 2) {
+        mesh.getVertexPosition(k, v).applyMatrix4(mesh.matrixWorld)
+        // Row bench pad: station x -2.31..-1.29, y .4175..4825, z ±.145.
+        if (v.x < -2.31 || v.x > -1.29 || Math.abs(v.z) > .145 || v.y > .4825 || v.y < .4175) continue
+        deepest = Math.max(deepest, Math.min(.4825 - v.y, .145 - Math.abs(v.z)))
+      }
+    }
+    expect(deepest, `${time} ms`).toBeLessThan(.005)
+  }
+}, 60000)
+
 
 
 test('step focus maps hands, feet and arms onto the real skeleton', async () => {

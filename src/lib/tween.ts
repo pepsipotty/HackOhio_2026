@@ -62,5 +62,8 @@ export function samplePose(keys: { t: number; pose: Pose }[], t: number, smooth 
   if (lo.pose.scapula !== undefined || hi.pose.scapula !== undefined) {
     pose.scapula = (lo.pose.scapula ?? 0) + ((hi.pose.scapula ?? 0) - (lo.pose.scapula ?? 0)) * u
   }
+  // An explicit hold carries through keys that leave it out, so the hands never fall back to guessing.
+  const handle = hi.pose.handle ?? lo.pose.handle
+  if (handle) pose.handle = handle
   return pose
 }
